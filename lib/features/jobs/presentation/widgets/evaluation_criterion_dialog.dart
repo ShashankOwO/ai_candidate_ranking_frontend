@@ -100,12 +100,12 @@ class _EvaluationCriterionDialogState
         ),
       );
     } finally {
-      if (!mounted) return;
-
-      setState(() {
-        saving = false;
-      });
-    }
+  if (mounted) {
+    setState(() {
+      saving = false;
+    });
+  }
+}
   }
 
   @override

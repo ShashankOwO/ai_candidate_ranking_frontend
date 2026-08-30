@@ -246,7 +246,7 @@ class _JobFormPageState extends State<JobFormPage> {
                 const SizedBox(height: 16),
 
                 DropdownButtonFormField<String>(
-                  value: employmentType,
+                 initialValue: employmentType,
                   decoration:
                       const InputDecoration(
                     labelText:
