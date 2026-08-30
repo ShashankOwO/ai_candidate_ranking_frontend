@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+<<<<<<< HEAD
 import 'core/theme/app_theme.dart';
 import 'features/auth/screens/login_screen.dart';
 
@@ -27,3 +28,10 @@ class CandidateRankingApp extends StatelessWidget {
 
 
 
+=======
+import 'app.dart';
+
+void main() {
+  runApp(const App());
+}
+>>>>>>> origin/mani_front
