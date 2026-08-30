@@ -6,49 +6,56 @@ import '../../../core/utils/validators.dart';
 import '../../../main.dart';
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_text_field.dart';
-import '../../dashboard/screens/dashboard_screen.dart';
 import '../widgets/auth_header.dart';
-import 'register_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final usernameController = TextEditingController();
+  final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
   bool loading = false;
   bool obscurePassword = true;
+  bool obscureConfirmPassword = true;
 
   @override
   void dispose() {
     usernameController.dispose();
+    emailController.dispose();
     passwordController.dispose();
+    confirmPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> login() async {
+  Future<void> register() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => loading = true);
 
     try {
-      await authRepository.login(
+      await authRepository.register(
         username: usernameController.text.trim(),
+        email: emailController.text.trim(),
         password: passwordController.text,
       );
 
       if (!mounted) return;
 
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
-        (route) => false,
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Registration successful! Please login.'),
+          backgroundColor: AppColors.success,
+        ),
       );
+
+      Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
 
@@ -61,13 +68,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     }
-  }
-
-  void openRegister() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const RegisterScreen()),
-    );
   }
 
   @override
@@ -94,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: const Icon(
-                          Icons.auto_awesome,
+                          Icons.person_add,
                           color: Colors.white,
                           size: 36,
                         ),
@@ -104,8 +104,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 32),
 
                     const AuthHeader(
-                      title: 'Welcome Back',
-                      subtitle: 'Login to your account',
+                      title: 'Create Account',
+                      subtitle: 'Register to get started',
                     ),
 
                     const SizedBox(height: 32),
@@ -115,7 +115,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     AppTextField(
                       label: 'Username',
                       controller: usernameController,
-                      validator: Validators.required,
+                      validator: Validators.username,
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    Text('Email', style: AppTextStyles.label),
+                    const SizedBox(height: 8),
+                    AppTextField(
+                      label: 'Email',
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: Validators.email,
                     ),
 
                     const SizedBox(height: 18),
@@ -143,26 +154,54 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
 
+                    const SizedBox(height: 18),
+
+                    Text('Confirm Password', style: AppTextStyles.label),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: confirmPasswordController,
+                      obscureText: obscureConfirmPassword,
+                      validator: Validators.confirmPassword(
+                        () => passwordController.text,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Confirm Password',
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            obscureConfirmPassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              obscureConfirmPassword =
+                                  !obscureConfirmPassword;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+
                     const SizedBox(height: 24),
 
                     AppButton(
-                      text: 'Login',
+                      text: 'Register',
                       loading: loading,
-                      onPressed: login,
+                      onPressed: register,
                     ),
 
                     const SizedBox(height: 20),
 
                     Center(
                       child: TextButton(
-                        onPressed: openRegister,
+                        onPressed: () => Navigator.pop(context),
                         child: RichText(
                           text: TextSpan(
-                            text: "New user? ",
+                            text: 'Already have an account? ',
                             style: AppTextStyles.bodySecondary,
                             children: [
                               TextSpan(
-                                text: 'Register',
+                                text: 'Login',
                                 style: AppTextStyles.label.copyWith(
                                   color: AppColors.primary,
                                 ),
