@@ -12,6 +12,11 @@ class ResumeRepository {
   Future<ResumeUploadModel> uploadResumeBytes({
     required List<int> bytes,
     required String fileName,
+    String mimeType = 'application/pdf',
   }) =>
-      _dataSource.uploadResumeBytes(bytes: bytes, fileName: fileName);
+      _dataSource.uploadResumeBytes(
+        bytes: bytes,
+        fileName: fileName,
+        mimeType: mimeType,
+      );
 }

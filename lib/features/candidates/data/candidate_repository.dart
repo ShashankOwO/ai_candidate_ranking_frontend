@@ -16,6 +16,16 @@ class CandidateRepository {
   Future<CandidateModel> getCandidate(int candidateId) =>
       _dataSource.getCandidate(candidateId);
 
+  Future<CandidateModel> createCandidate(Map<String, dynamic> data) =>
+      _dataSource.createCandidate(data);
+
+  Future<CandidateModel> updateCandidate(
+          int candidateId, Map<String, dynamic> data) =>
+      _dataSource.updateCandidate(candidateId, data);
+
+  Future<void> deleteCandidate(int candidateId) =>
+      _dataSource.deleteCandidate(candidateId);
+
   Future<List<CandidateSkillModel>> getCandidateSkills(int candidateId) =>
       _dataSource.getCandidateSkills(candidateId);
 
@@ -41,4 +51,7 @@ class CandidateRepository {
 
   Future<void> addProject(int candidateId, Map<String, dynamic> data) =>
       _dataSource.addProject(candidateId, data);
+
+  Future<void> addSkill(int candidateId, Map<String, dynamic> data) =>
+      _dataSource.addSkill(candidateId, data);
 }

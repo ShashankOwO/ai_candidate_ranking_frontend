@@ -8,6 +8,7 @@ import '../data/models/candidate_model.dart';
 import '../data/models/candidate_project_model.dart';
 import '../data/models/candidate_qualification_model.dart';
 import '../data/models/candidate_skill_model.dart';
+import 'candidate_form_dialog.dart';
 
 class CandidateDetailScreen extends StatefulWidget {
   final int candidateId;
@@ -47,31 +48,58 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
     super.dispose();
   }
 
+  String? error;
+
   Future<void> _load() async {
-    setState(() => loading = true);
+    setState(() {
+      loading = true;
+      error = null;
+    });
 
+    // Load candidate info first — if this fails, nothing else makes sense.
     try {
-      final results = await Future.wait([
-        candidateRepository.getCandidate(widget.candidateId),
-        candidateRepository.getCandidateSkills(widget.candidateId),
-        candidateRepository.getCandidateExperience(widget.candidateId),
-        candidateRepository.getCandidateQualifications(widget.candidateId),
-        candidateRepository.getCandidateProjects(widget.candidateId),
-      ]);
-
+      final c = await candidateRepository.getCandidate(widget.candidateId);
       if (!mounted) return;
-
-      setState(() {
-        candidate = results[0] as CandidateModel;
-        skills = results[1] as List<CandidateSkillModel>;
-        experience = results[2] as List<CandidateExperienceModel>;
-        qualifications = results[3] as List<CandidateQualificationModel>;
-        projects = results[4] as List<CandidateProjectModel>;
-        loading = false;
-      });
+      setState(() => candidate = c);
     } catch (e) {
       if (!mounted) return;
-      setState(() => loading = false);
+      setState(() {
+        loading = false;
+        error = 'Failed to load candidate: $e';
+      });
+      return;
+    }
+
+    // Load each section independently — one failure shouldn't block the rest.
+    await Future.wait([
+      _loadSafe(() async {
+        final r = await candidateRepository.getCandidateSkills(widget.candidateId);
+        if (mounted) setState(() => skills = r);
+      }),
+      _loadSafe(() async {
+        final r = await candidateRepository.getCandidateExperience(widget.candidateId);
+        if (mounted) setState(() => experience = r);
+      }),
+      _loadSafe(() async {
+        final r = await candidateRepository.getCandidateQualifications(widget.candidateId);
+        if (mounted) setState(() => qualifications = r);
+      }),
+      _loadSafe(() async {
+        final r = await candidateRepository.getCandidateProjects(widget.candidateId);
+        if (mounted) setState(() => projects = r);
+      }),
+    ]);
+
+    if (!mounted) return;
+    setState(() => loading = false);
+  }
+
+  /// Runs an async function and swallows errors so other sections still load.
+  Future<void> _loadSafe(Future<void> Function() fn) async {
+    try {
+      await fn();
+    } catch (e) {
+      debugPrint('CandidateDetail: section load failed: $e');
     }
   }
 
@@ -83,9 +111,41 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
       );
     }
 
+    if (error != null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Candidate')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+              const SizedBox(height: 12),
+              Text(error!, textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+              FilledButton(onPressed: _load, child: const Text('Retry')),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(candidate?.fullName ?? 'Candidate'),
+        actions: [
+          if (candidate != null)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Edit candidate',
+              onPressed: () async {
+                final result = await showDialog<CandidateModel>(
+                  context: context,
+                  builder: (_) => CandidateFormDialog(candidate: candidate),
+                );
+                if (result != null) _load();
+              },
+            ),
+        ],
         bottom: TabBar(
           controller: tabController,
           tabs: const [
@@ -132,8 +192,8 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
                         if (candidate!.emailAddress != null)
                           Text(candidate!.emailAddress!,
                               style: AppTextStyles.bodySecondary),
-                        if (candidate!.phone != null)
-                          Text(candidate!.phone!,
+                        if (candidate!.contactNo != null)
+                          Text(candidate!.contactNo!,
                               style: AppTextStyles.caption),
                       ],
                     ),
