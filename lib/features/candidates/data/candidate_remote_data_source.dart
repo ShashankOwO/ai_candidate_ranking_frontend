@@ -92,6 +92,17 @@ class CandidateRemoteDataSource {
     );
   }
 
+
+  Future<void> addSkill(
+  int candidateId,
+  Map<String, dynamic> data,
+) async {
+  await apiClient.post(
+    ApiConstants.candidateSkills(candidateId),
+    body: data,
+  );
+}
+
   Future<void> addExperience(
       int candidateId, Map<String, dynamic> data) async {
     await apiClient.post(

@@ -120,7 +120,7 @@ class _JobsPageState extends State<JobsPage> {
                         : ListView.separated(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             itemCount: filteredJobs.length,
-                            separatorBuilder: (_, __) =>
+                            separatorBuilder: (_, _) =>
                                 const SizedBox(height: 12),
                             itemBuilder: (context, index) {
                               final job = filteredJobs[index];

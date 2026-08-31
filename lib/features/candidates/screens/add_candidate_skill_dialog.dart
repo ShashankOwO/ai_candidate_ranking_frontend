@@ -318,7 +318,7 @@ class _AddCandidateSkillDialogState extends State<AddCandidateSkillDialog> {
  
               // Proficiency
               DropdownButtonFormField<String>(
-                value: proficiency,
+                initialValue: proficiency,
                 decoration: const InputDecoration(
                   labelText: 'Proficiency',
                   border: OutlineInputBorder(),
