@@ -1,4 +1,5 @@
 class CandidateQualificationModel {
+  final int? qualificationId;
   final String? university;
   final String? degree;
   final String? specialization;
@@ -7,6 +8,7 @@ class CandidateQualificationModel {
   final int? joiningYear;
 
   const CandidateQualificationModel({
+    this.qualificationId,
     this.university,
     this.degree,
     this.specialization,
@@ -17,6 +19,7 @@ class CandidateQualificationModel {
 
   factory CandidateQualificationModel.fromJson(Map<String, dynamic> json) {
     return CandidateQualificationModel(
+      qualificationId: json['qualification_id'] is int ? json['qualification_id'] : int.tryParse('${json['qualification_id'] ?? ''}'),
       university: json['university']?.toString(),
       degree: json['degree']?.toString(),
       specialization: json['specialization']?.toString(),
