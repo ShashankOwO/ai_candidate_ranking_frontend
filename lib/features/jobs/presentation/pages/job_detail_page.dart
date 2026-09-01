@@ -519,7 +519,6 @@ class _JobDetailPageState extends State<JobDetailPage>
       context: context,
       builder: (_) => AddSkillDialog(
         jobId: widget.jobId,
-        jobTitle: job?.jobTitle ?? '',
         repository: widget.repository,
       ),
     );

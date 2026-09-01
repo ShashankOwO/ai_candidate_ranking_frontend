@@ -41,11 +41,6 @@ class JobRemoteDataSource {
     return _listFromResponse(response, SkillModel.fromJson);
   }
 
-  Future<SkillModel> createSkill(Map<String, dynamic> data) async {
-    final response = await apiClient.post(ApiConstants.createSkill, body: data);
-    return SkillModel.fromJson(response as Map<String, dynamic>);
-  }
-
   // ── Job Skills ──
 
   Future<List<JobSkillModel>> getJobSkills(int jobId) async {
