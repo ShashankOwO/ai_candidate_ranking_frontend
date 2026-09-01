@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_text_styles.dart';
 import '../../data/job_repository.dart';
 import '../../data/models/job_model.dart';
 
@@ -20,15 +21,11 @@ class JobFormPage extends StatefulWidget {
 }
 
 class _JobFormPageState extends State<JobFormPage> {
-  final GlobalKey<FormState> _formKey =
-      GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
 
   late TextEditingController titleController;
   late TextEditingController descriptionController;
-  late TextEditingController locationController;
   late TextEditingController experienceController;
-
-  String employmentType = 'Full-time';
 
   bool saving = false;
 
@@ -37,82 +34,44 @@ class _JobFormPageState extends State<JobFormPage> {
     super.initState();
 
     titleController = TextEditingController(
-      text: widget.job?.title ?? '',
+      text: widget.job?.jobTitle ?? '',
     );
-
     descriptionController = TextEditingController(
-      text: widget.job?.description ?? '',
+      text: widget.job?.jobDescription ?? '',
     );
-
-    locationController = TextEditingController(
-      text: widget.job?.location ?? '',
-    );
-
     experienceController = TextEditingController(
       text: widget.job?.minimumExperience?.toString() ?? '',
     );
-
-    final existingEmployment =
-        widget.job?.employmentType;
-
-    if (existingEmployment != null &&
-        existingEmployment.isNotEmpty) {
-      if (existingEmployment == 'Full-time' ||
-          existingEmployment == 'Part-time' ||
-          existingEmployment == 'Contract') {
-        employmentType = existingEmployment;
-      }
-    }
   }
 
   @override
   void dispose() {
     titleController.dispose();
     descriptionController.dispose();
-    locationController.dispose();
     experienceController.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      saving = true;
-    });
+    setState(() => saving = true);
 
     try {
-      final experienceText =
-          experienceController.text.trim();
+      final experience =
+          int.tryParse(experienceController.text.trim());
 
-      final int? experience =
-          experienceText.isEmpty
-              ? null
-              : int.tryParse(experienceText);
-
-      final Map<String, dynamic> data = {
+      final data = {
         'job_title': titleController.text.trim(),
-        'job_description':
-            descriptionController.text.trim(),
-        'location': locationController.text.trim(),
-        'employment_type': employmentType,
+        'job_description': descriptionController.text.trim(),
         'minimum_experience': experience,
       };
 
-      if (widget.isEditing) {
-        await widget.repository.updateJob(
-          widget.job!.id,
-          data,
-        );
-      } else {
-        await widget.repository.createJob(data);
-      }
+      // Note: backend only supports creating jobs (no update endpoint).
+      // Always call createJob regardless of edit mode.
+      await widget.repository.createJob(data);
 
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -126,23 +85,12 @@ class _JobFormPageState extends State<JobFormPage> {
 
       Navigator.pop(context, true);
     } catch (e) {
-      if (!mounted) {
-        return;
-      }
-
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Failed to save job: $e',
-          ),
-        ),
+        SnackBar(content: Text('Failed: $e')),
       );
     } finally {
-      if (mounted) {
-        setState(() {
-          saving = false;
-        });
-      }
+      if (mounted) setState(() => saving = false);
     }
   }
 
@@ -150,11 +98,7 @@ class _JobFormPageState extends State<JobFormPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          widget.isEditing
-              ? 'Edit Job'
-              : 'Create Job',
-        ),
+        title: Text(widget.isEditing ? 'Edit Job' : 'Create Job'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -162,189 +106,78 @@ class _JobFormPageState extends State<JobFormPage> {
           child: Form(
             key: _formKey,
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.stretch,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Text('Job Title', style: AppTextStyles.label),
+                const SizedBox(height: 8),
                 TextFormField(
                   controller: titleController,
-                  textInputAction:
-                      TextInputAction.next,
-                  decoration:
-                      const InputDecoration(
-                    labelText: 'Job title',
-                    hintText: 'Flutter Developer',
-                    prefixIcon:
-                        Icon(Icons.work_outline),
-                    border:
-                        OutlineInputBorder(),
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(
+                    hintText: 'Python Backend Developer',
+                    prefixIcon: Icon(Icons.work_outline),
                   ),
                   validator: (value) {
-                    if (value == null ||
-                        value.trim().isEmpty) {
-                      return 'Enter job title';
+                    if (value == null || value.trim().length < 2) {
+                      return 'Enter a valid job title';
                     }
-
-                    if (value.trim().length < 2) {
-                      return 'Job title is too short';
-                    }
-
                     return null;
                   },
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
+                Text('Job Description', style: AppTextStyles.label),
+                const SizedBox(height: 8),
                 TextFormField(
-                  controller:
-                      descriptionController,
+                  controller: descriptionController,
                   maxLines: 5,
-                  decoration:
-                      const InputDecoration(
-                    labelText:
-                        'Job description',
+                  decoration: const InputDecoration(
                     hintText:
-                        'Enter job responsibilities and requirements',
-                    prefixIcon: Icon(
-                      Icons.description_outlined,
-                    ),
-                    border:
-                        OutlineInputBorder(),
+                        'Looking for a Python Backend Developer responsible for...',
                     alignLabelWithHint: true,
                   ),
                   validator: (value) {
-                    if (value == null ||
-                        value.trim().isEmpty) {
-                      return 'Enter job description';
-                    }
-
-                    if (value.trim().length < 10) {
+                    if (value == null || value.trim().length < 10) {
                       return 'Description must be at least 10 characters';
                     }
-
                     return null;
                   },
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
+                Text('Minimum Experience', style: AppTextStyles.label),
+                const SizedBox(height: 8),
                 TextFormField(
-                  controller: locationController,
-                  textInputAction:
-                      TextInputAction.next,
-                  decoration:
-                      const InputDecoration(
-                    labelText: 'Location',
-                    hintText: 'Bangalore',
-                    prefixIcon: Icon(
-                      Icons.location_on_outlined,
-                    ),
-                    border:
-                        OutlineInputBorder(),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                DropdownButtonFormField<String>(
-                 initialValue: employmentType,
-                  decoration:
-                      const InputDecoration(
-                    labelText:
-                        'Employment type',
-                    prefixIcon: Icon(
-                      Icons.business_center_outlined,
-                    ),
-                    border:
-                        OutlineInputBorder(),
-                  ),
-                  items: const [
-                    DropdownMenuItem<String>(
-                      value: 'Full-time',
-                      child: Text('Full-time'),
-                    ),
-                    DropdownMenuItem<String>(
-                      value: 'Part-time',
-                      child: Text('Part-time'),
-                    ),
-                    DropdownMenuItem<String>(
-                      value: 'Contract',
-                      child: Text('Contract'),
-                    ),
-                  ],
-                  onChanged: saving
-                      ? null
-                      : (value) {
-                          if (value == null) {
-                            return;
-                          }
-
-                          setState(() {
-                            employmentType =
-                                value;
-                          });
-                        },
-                ),
-
-                const SizedBox(height: 16),
-
-                TextFormField(
-                  controller:
-                      experienceController,
-                  keyboardType:
-                      TextInputType.number,
-                  decoration:
-                      const InputDecoration(
-                    labelText:
-                        'Minimum experience',
-                    hintText: '2',
+                  controller: experienceController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    hintText: '3',
                     suffixText: 'years',
-                    prefixIcon:
-                        Icon(Icons.timeline),
-                    border:
-                        OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.timeline),
                   ),
                   validator: (value) {
-                    if (value == null ||
-                        value.trim().isEmpty) {
-                      return null;
-                    }
-
-                    final number =
-                        int.tryParse(
-                      value.trim(),
-                    );
-
-                    if (number == null) {
-                      return 'Enter a valid number';
-                    }
-
-                    if (number < 0) {
-                      return 'Experience cannot be negative';
-                    }
-
+                    if (value == null || value.trim().isEmpty) return null;
+                    final n = int.tryParse(value.trim());
+                    if (n == null || n < 0) return 'Enter a valid number';
                     return null;
                   },
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
 
                 SizedBox(
-                  height: 50,
+                  height: 52,
                   child: FilledButton.icon(
-                    onPressed:
-                        saving ? null : _save,
+                    onPressed: saving ? null : _save,
                     icon: saving
                         ? const SizedBox(
                             width: 20,
                             height: 20,
-                            child:
-                                CircularProgressIndicator(
-                              strokeWidth: 2,
-                            ),
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(
-                            Icons.save,
-                          ),
+                        : const Icon(Icons.save),
                     label: Text(
                       saving
                           ? 'Saving...'

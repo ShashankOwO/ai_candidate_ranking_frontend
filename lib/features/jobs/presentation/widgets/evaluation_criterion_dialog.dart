@@ -1,6 +1,6 @@
-
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../data/job_repository.dart';
 import '../../data/models/evaluation_criterion_model.dart';
 
@@ -26,9 +26,10 @@ class _EvaluationCriterionDialogState
   late final TextEditingController nameController;
   late final TextEditingController descriptionController;
   late final TextEditingController weightController;
+  late final TextEditingController maxScoreController;
+  late String criteriaType;
 
   bool saving = false;
-
   bool get editing => widget.criterion != null;
 
   @override
@@ -36,76 +37,70 @@ class _EvaluationCriterionDialogState
     super.initState();
 
     nameController = TextEditingController(
-      text: widget.criterion?.name ?? '',
+      text: widget.criterion?.criteriaName ?? '',
     );
-
     descriptionController = TextEditingController(
-      text: widget.criterion?.description ?? '',
+      text: widget.criterion?.criteriaDescription ?? '',
     );
-
     weightController = TextEditingController(
-      text: widget.criterion?.weight.toString() ?? '1',
+      text: widget.criterion?.weight.toString() ?? '',
     );
+    maxScoreController = TextEditingController(
+      text: widget.criterion?.maxScore.toString() ?? '100',
+    );
+    criteriaType = widget.criterion?.criteriaType ?? 'skills';
   }
 
   Future<void> _save() async {
     final name = nameController.text.trim();
-
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a criterion name.'),
-        ),
+        const SnackBar(content: Text('Please enter a criterion name')),
       );
       return;
     }
 
-    final weight =
-        double.tryParse(weightController.text.trim()) ?? 1;
+    final weight = double.tryParse(weightController.text.trim());
+    if (weight == null || weight <= 0 || weight > 100) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Weight must be between 1 and 100')),
+      );
+      return;
+    }
 
-    setState(() {
-      saving = true;
-    });
+    final maxScore = double.tryParse(maxScoreController.text.trim()) ?? 100.0;
+
+    setState(() => saving = true);
 
     try {
-      final data = <String, dynamic>{
-        'name': name,
-        'description': descriptionController.text.trim(),
+      final data = {
+        'criteria_name': name,
+        'criteria_type': criteriaType,
+        'criteria_description': descriptionController.text.trim(),
         'weight': weight,
+        'max_score': maxScore,
       };
 
       if (editing) {
         await widget.repository.updateCriterion(
-          widget.criterion!.id,
+          widget.jobId,
+          widget.criterion!.criteriaId,
           data,
         );
       } else {
-        await widget.repository.addCriterion(
-          widget.jobId,
-          data,
-        );
+        await widget.repository.addCriterion(widget.jobId, data);
       }
 
       if (!mounted) return;
-
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Failed to save criterion: $e',
-          ),
-        ),
+        SnackBar(content: Text('Failed: $e')),
       );
     } finally {
-  if (mounted) {
-    setState(() {
-      saving = false;
-    });
-  }
-}
+      if (mounted) setState(() => saving = false);
+    }
   }
 
   @override
@@ -113,17 +108,14 @@ class _EvaluationCriterionDialogState
     nameController.dispose();
     descriptionController.dispose();
     weightController.dispose();
+    maxScoreController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(
-        editing
-            ? 'Edit Evaluation Criterion'
-            : 'Add Evaluation Criterion',
-      ),
+      title: Text(editing ? 'Edit Criterion' : 'Add Evaluation Criterion'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -131,36 +123,91 @@ class _EvaluationCriterionDialogState
             TextField(
               controller: nameController,
               enabled: !saving,
-              textInputAction: TextInputAction.next,
               decoration: const InputDecoration(
-                labelText: 'Criterion',
-                hintText: 'e.g. Technical Skills',
+                labelText: 'Criterion Name',
+                hintText: 'e.g. Skills',
                 border: OutlineInputBorder(),
               ),
             ),
+
             const SizedBox(height: 12),
+
+            // Criteria Type Dropdown
+            DropdownButtonFormField<String>(
+              initialValue: criteriaType,
+              decoration: const InputDecoration(
+                labelText: 'Criterion Type',
+                border: OutlineInputBorder(),
+              ),
+              items: EvaluationCriterionModel.criteriaTypes.map((type) {
+                return DropdownMenuItem(
+                  value: type,
+                  child: Text(_formatType(type)),
+                );
+              }).toList(),
+              onChanged: saving
+                  ? null
+                  : (value) {
+                      if (value != null) {
+                        setState(() => criteriaType = value);
+                      }
+                    },
+            ),
+
+            const SizedBox(height: 12),
+
             TextField(
               controller: descriptionController,
               enabled: !saving,
               maxLines: 3,
               decoration: const InputDecoration(
                 labelText: 'Description',
-                hintText: 'Describe the evaluation criterion',
+                hintText: 'Describe how this criterion should be evaluated',
                 border: OutlineInputBorder(),
               ),
             ),
+
             const SizedBox(height: 12),
-            TextField(
-              controller: weightController,
-              enabled: !saving,
-              keyboardType:
-                  const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: const InputDecoration(
-                labelText: 'Weight',
-                hintText: 'e.g. 1.0',
-                border: OutlineInputBorder(),
+
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: weightController,
+                    enabled: !saving,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Weight (%)',
+                      hintText: 'e.g. 40',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: maxScoreController,
+                    enabled: !saving,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Max Score',
+                      hintText: '100',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Weight should be a percentage (total must equal 100%)',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ),
           ],
@@ -168,11 +215,7 @@ class _EvaluationCriterionDialogState
       ),
       actions: [
         TextButton(
-          onPressed: saving
-              ? null
-              : () {
-                  Navigator.pop(context);
-                },
+          onPressed: saving ? null : () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
         ElevatedButton(
@@ -181,16 +224,15 @@ class _EvaluationCriterionDialogState
               ? const SizedBox(
                   width: 18,
                   height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                  ),
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : Text(
-                  editing ? 'Update' : 'Add',
-                ),
+              : Text(editing ? 'Update' : 'Add'),
         ),
       ],
     );
   }
-}
 
+  String _formatType(String type) {
+    return type[0].toUpperCase() + type.substring(1);
+  }
+}

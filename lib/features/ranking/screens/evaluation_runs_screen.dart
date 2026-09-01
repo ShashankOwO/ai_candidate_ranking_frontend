@@ -3,10 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../main.dart';
-import '../../candidates/data/models/candidate_model.dart';
-import '../../candidates/screens/candidate_detail_screen.dart';
-import '../../jobs/data/models/ranking_result_model.dart';
 import '../data/models/evaluation_run_model.dart';
+import '../../jobs/data/models/ranking_result_model.dart';
 import 'candidate_evaluation_screen.dart';
 
 class EvaluationRunsScreen extends StatefulWidget {
@@ -28,9 +26,9 @@ class _EvaluationRunsScreenState extends State<EvaluationRunsScreen> {
   List<EvaluationRunModel> runs = [];
   bool loading = true;
 
+  // For viewing ranked candidates of a selected run.
   int? selectedRunId;
   List<RankingResultModel> rankings = [];
-  Map<int, String> candidateNames = {}; // candidateId → name
   bool loadingRankings = false;
 
   @override
@@ -41,8 +39,10 @@ class _EvaluationRunsScreenState extends State<EvaluationRunsScreen> {
 
   Future<void> _loadRuns() async {
     setState(() => loading = true);
+
     try {
-      final result = await rankingRepository.getEvaluationRuns(widget.jobId);
+      final result =
+          await rankingRepository.getEvaluationRuns(widget.jobId);
       if (!mounted) return;
       setState(() {
         runs = result;
@@ -58,28 +58,13 @@ class _EvaluationRunsScreenState extends State<EvaluationRunsScreen> {
     setState(() {
       selectedRunId = runId;
       loadingRankings = true;
-      rankings = [];
-      candidateNames = {};
     });
 
     try {
-      // Load rankings and all candidates in parallel.
-      final results = await Future.wait([
-        rankingRepository.getRankedCandidates(runId),
-        candidateRepository.getCandidates(),
-      ]);
-
+      final result = await rankingRepository.getRankedCandidates(runId);
       if (!mounted) return;
-
-      final rankList = results[0] as List<RankingResultModel>;
-      final candidateList = results[1] as List<CandidateModel>;
-
-      // Build a lookup map: candidateId → fullName
-      final nameMap = {for (var c in candidateList) c.candidateId: c.fullName};
-
       setState(() {
-        rankings = rankList;
-        candidateNames = nameMap;
+        rankings = result;
         loadingRankings = false;
       });
     } catch (e) {
@@ -88,22 +73,24 @@ class _EvaluationRunsScreenState extends State<EvaluationRunsScreen> {
     }
   }
 
-  String _candidateName(int id) =>
-      candidateNames[id] ?? 'Candidate #$id';
-
   @override
   Widget build(BuildContext context) {
     final content = _buildContent();
+
     if (widget.embedded) return content;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Evaluation History')),
+      appBar: AppBar(
+        title: const Text('Evaluation History'),
+      ),
       body: content,
     );
   }
 
   Widget _buildContent() {
-    if (loading) return const Center(child: CircularProgressIndicator());
+    if (loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     if (runs.isEmpty) {
       return Center(
@@ -124,8 +111,12 @@ class _EvaluationRunsScreenState extends State<EvaluationRunsScreen> {
       );
     }
 
-    if (selectedRunId != null) return _buildRankings();
+    // If a run is selected, show rankings.
+    if (selectedRunId != null) {
+      return _buildRankings();
+    }
 
+    // Show runs list.
     return RefreshIndicator(
       onRefresh: _loadRuns,
       child: ListView.builder(
@@ -146,11 +137,14 @@ class _EvaluationRunsScreenState extends State<EvaluationRunsScreen> {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryLight.withValues(alpha: 0.15),
+                        color: AppColors.primaryLight
+                            .withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.assessment,
-                          color: AppColors.primary),
+                      child: const Icon(
+                        Icons.assessment,
+                        color: AppColors.primary,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -188,17 +182,18 @@ class _EvaluationRunsScreenState extends State<EvaluationRunsScreen> {
   Widget _buildRankings() {
     return Column(
       children: [
-        // Header bar
+        // Back button
         Padding(
-          padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
+          padding: const EdgeInsets.all(8),
           child: Row(
             children: [
               TextButton.icon(
-                onPressed: () => setState(() {
-                  selectedRunId = null;
-                  rankings.clear();
-                  candidateNames.clear();
-                }),
+                onPressed: () {
+                  setState(() {
+                    selectedRunId = null;
+                    rankings.clear();
+                  });
+                },
                 icon: const Icon(Icons.arrow_back, size: 18),
                 label: const Text('Back to Runs'),
               ),
@@ -216,10 +211,8 @@ class _EvaluationRunsScreenState extends State<EvaluationRunsScreen> {
         else if (rankings.isEmpty)
           const Expanded(
             child: Center(
-              child: Text(
-                'No ranked candidates in this run.',
-                style: AppTextStyles.bodySecondary,
-              ),
+              child: Text('No ranked candidates in this run.',
+                  style: AppTextStyles.bodySecondary),
             ),
           )
         else
@@ -229,155 +222,99 @@ class _EvaluationRunsScreenState extends State<EvaluationRunsScreen> {
               itemCount: rankings.length,
               itemBuilder: (context, index) {
                 final item = rankings[index];
-                return _RankingCard(
-                  item: item,
-                  name: _candidateName(item.candidateId),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => CandidateEvaluationScreen(
-                        runId: selectedRunId!,
-                        candidateId: item.candidateId,
-                        candidateName: _candidateName(item.candidateId),
-                      ),
-                    ),
-                  ),
-                  onViewProfile: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => CandidateDetailScreen(
-                        candidateId: item.candidateId,
-                      ),
-                    ),
-                  ),
-                );
+                return _buildRankingCard(item);
               },
             ),
           ),
       ],
     );
   }
-}
 
-// ─── Ranking Card ─────────────────────────────────────────────────────────────
-
-class _RankingCard extends StatelessWidget {
-  final RankingResultModel item;
-  final String name;
-  final VoidCallback onTap;
-  final VoidCallback onViewProfile;
-
-  const _RankingCard({
-    required this.item,
-    required this.name,
-    required this.onTap,
-    required this.onViewProfile,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildRankingCard(RankingResultModel item) {
     final recColor = _recommendationColor(item.recommendationLabel);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CandidateEvaluationScreen(
+                runId: selectedRunId!,
+                candidateId: item.candidateId,
+                candidateName: item.candidateName,
+              ),
+            ),
+          );
+        },
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              Row(
-                children: [
-                  // Rank badge
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: _rankColor(item.rankPosition)
-                          .withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
+              // Rank badge
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: _rankColor(item.rankPosition)
+                      .withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    '${item.rankPosition}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: _rankColor(item.rankPosition),
                     ),
-                    child: Center(
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // Name & recommendation
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(item.candidateName,
+                        style: AppTextStyles.label),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: recColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       child: Text(
-                        '#${item.rankPosition}',
+                        item.recommendationLabel,
                         style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          color: _rankColor(item.rankPosition),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: recColor,
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // Name & recommendation
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(name, style: AppTextStyles.label),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: recColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            item.recommendationLabel,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: recColor,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Score
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        item.finalScore.toStringAsFixed(1),
-                        style: AppTextStyles.title
-                            .copyWith(color: AppColors.primary),
-                      ),
-                      const Text('/ 100', style: AppTextStyles.caption),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
 
-              // View profile link
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+              // Score
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  TextButton.icon(
-                    onPressed: onViewProfile,
-                    icon: const Icon(Icons.person_outline, size: 14),
-                    label: const Text('View Profile'),
-                    style: TextButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
+                  Text(
+                    item.finalScore.toStringAsFixed(1),
+                    style: AppTextStyles.title.copyWith(
+                      color: AppColors.primary,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  TextButton.icon(
-                    onPressed: onTap,
-                    icon: const Icon(Icons.analytics_outlined, size: 14),
-                    label: const Text('Score Details'),
-                    style: TextButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
-                    ),
-                  ),
+                  const Text('Score', style: AppTextStyles.caption),
                 ],
               ),
             ],
@@ -400,7 +337,7 @@ class _RankingCard extends StatelessWidget {
         return AppColors.success;
       case 'good match':
         return AppColors.info;
-      case 'potential match':
+      case 'average match':
         return AppColors.warning;
       default:
         return AppColors.error;

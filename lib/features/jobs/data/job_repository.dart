@@ -2,108 +2,58 @@ import 'job_remote_data_source.dart';
 import 'models/evaluation_criterion_model.dart';
 import 'models/job_model.dart';
 import 'models/job_skill_model.dart';
-import 'models/ranking_result_model.dart';
+import 'models/skill_model.dart';
 
 class JobRepository {
-  final JobRemoteDataSource remoteDataSource;
+  final JobRemoteDataSource _dataSource;
 
-  JobRepository(this.remoteDataSource);
+  JobRepository(this._dataSource);
 
-  Future<List<JobModel>> getJobs() async {
-    return remoteDataSource.getJobs();
-  }
+  // ── Jobs ──
 
-  Future<JobModel> getJob(int jobId) async {
-    return remoteDataSource.getJob(jobId);
-  }
+  Future<List<JobModel>> getJobs() => _dataSource.getJobs();
 
-  Future<JobModel> createJob(
-    Map<String, dynamic> data,
-  ) async {
-    return remoteDataSource.createJob(data);
-  }
+  Future<JobModel> getJob(int jobId) => _dataSource.getJob(jobId);
 
-  Future<JobModel> updateJob(
-    int jobId,
-    Map<String, dynamic> data,
-  ) async {
-    return remoteDataSource.updateJob(
-      jobId,
-      data,
-    );
-  }
+  Future<JobModel> createJob(Map<String, dynamic> data) =>
+      _dataSource.createJob(data);
 
-  Future<void> deleteJob(int jobId) async {
-    await remoteDataSource.deleteJob(jobId);
-  }
+  Future<void> deleteJob(int jobId) => _dataSource.deleteJob(jobId);
 
-  Future<List<JobSkillModel>> getSkills(
-    int jobId,
-  ) async {
-    return remoteDataSource.getSkills(jobId);
-  }
+  // ── Master Skills ──
 
-  Future<JobSkillModel> addSkill(
-    int jobId,
-    Map<String, dynamic> data,
-  ) async {
-    return remoteDataSource.addSkill(
-      jobId,
-      data,
-    );
-  }
+  Future<List<SkillModel>> getAvailableSkills() =>
+      _dataSource.getAvailableSkills();
 
-  Future<void> deleteSkill(
-    int jobId,
-    int skillId,
-  ) async {
-    await remoteDataSource.deleteSkill(
-      jobId,
-      skillId,
-    );
-  }
+  // ── Job Skills ──
 
-  Future<List<EvaluationCriterionModel>> getCriteria(
-    int jobId,
-  ) async {
-    return remoteDataSource.getCriteria(jobId);
-  }
+  Future<List<JobSkillModel>> getJobSkills(int jobId) =>
+      _dataSource.getJobSkills(jobId);
+
+  Future<void> addJobSkill(int jobId, Map<String, dynamic> data) =>
+      _dataSource.addJobSkill(jobId, data);
+
+  Future<void> deleteJobSkill(int jobId, int skillId) =>
+      _dataSource.deleteJobSkill(jobId, skillId);
+
+  // ── Evaluation Criteria ──
+
+  Future<List<EvaluationCriterionModel>> getCriteria(int jobId) =>
+      _dataSource.getCriteria(jobId);
 
   Future<EvaluationCriterionModel> addCriterion(
     int jobId,
     Map<String, dynamic> data,
-  ) async {
-    return remoteDataSource.addCriterion(
-      jobId,
-      data,
-    );
-  }
+  ) =>
+      _dataSource.addCriterion(jobId, data);
 
   Future<EvaluationCriterionModel> updateCriterion(
-    int criterionId,
-    Map<String, dynamic> data,
-  ) async {
-    return remoteDataSource.updateCriterion(
-      criterionId,
-      data,
-    );
-  }
-
-  Future<void> deleteCriterion(
-    int criterionId,
-  ) async {
-    await remoteDataSource.deleteCriterion(
-      criterionId,
-    );
-  }
-
-  Future<void> rankJob(int jobId) async {
-    await remoteDataSource.rankJob(jobId);
-  }
-
-  Future<List<RankingResultModel>> getRankings(
     int jobId,
-  ) async {
-    return remoteDataSource.getRankings(jobId);
-  }
+    int criteriaId,
+    Map<String, dynamic> data,
+  ) =>
+      _dataSource.updateCriterion(jobId, criteriaId, data);
+
+  Future<void> deleteCriterion(int jobId, int criteriaId) =>
+      _dataSource.deleteCriterion(jobId, criteriaId);
 }

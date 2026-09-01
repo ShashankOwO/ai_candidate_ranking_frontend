@@ -1,206 +1,114 @@
+import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
-
 import 'models/evaluation_criterion_model.dart';
 import 'models/job_model.dart';
 import 'models/job_skill_model.dart';
-import 'models/ranking_result_model.dart';
+import 'models/skill_model.dart';
 
 class JobRemoteDataSource {
   final ApiClient apiClient;
 
   JobRemoteDataSource(this.apiClient);
 
-  Future<List<JobModel>> getJobs() async {
-    final response = await apiClient.get('/jobs');
+  // ── Jobs ──
 
-    return _listFromResponse(
-      response,
-      JobModel.fromJson,
-    );
+  Future<List<JobModel>> getJobs() async {
+    final response = await apiClient.get(ApiConstants.jobs);
+    // Returns a plain list: [{...}, {...}]
+    return _listFromResponse(response, JobModel.fromJson);
   }
 
   Future<JobModel> getJob(int jobId) async {
-    final response = await apiClient.get(
-      '/jobs/$jobId',
-    );
-
-    return JobModel.fromJson(
-      _mapFromResponse(response),
-    );
+    final response = await apiClient.get(ApiConstants.job(jobId));
+    // Returns a flat object with skills and evaluation_criteria embedded
+    return JobModel.fromJson(response as Map<String, dynamic>);
   }
 
-  Future<JobModel> createJob(
-    Map<String, dynamic> data,
-  ) async {
-    final response = await apiClient.post(
-      '/jobs',
-      body: data,
-    );
-
-    return JobModel.fromJson(
-      _mapFromResponse(response),
-    );
-  }
-
-  Future<JobModel> updateJob(
-    int jobId,
-    Map<String, dynamic> data,
-  ) async {
-    final response = await apiClient.put(
-      '/jobs/$jobId',
-      body: data,
-    );
-
-    return JobModel.fromJson(
-      _mapFromResponse(response),
-    );
+  Future<JobModel> createJob(Map<String, dynamic> data) async {
+    final response = await apiClient.post(ApiConstants.createJob, body: data);
+    return JobModel.fromJson(response as Map<String, dynamic>);
   }
 
   Future<void> deleteJob(int jobId) async {
-    await apiClient.delete(
-      '/jobs/$jobId',
-    );
+    await apiClient.delete(ApiConstants.job(jobId));
   }
 
-  Future<List<JobSkillModel>> getSkills(
-    int jobId,
-  ) async {
-    final response = await apiClient.get(
-      '/jobs/$jobId/skills',
-    );
+  // ── Master Skills ──
 
-    return _listFromResponse(
-      response,
-      JobSkillModel.fromJson,
-    );
+  Future<List<SkillModel>> getAvailableSkills() async {
+    final response = await apiClient.get(ApiConstants.skills);
+    // Returns a plain list
+    return _listFromResponse(response, SkillModel.fromJson);
   }
 
-  Future<JobSkillModel> addSkill(
-    int jobId,
-    Map<String, dynamic> data,
-  ) async {
-    final response = await apiClient.post(
-      '/jobs/$jobId/skills',
-      body: data,
-    );
+  // ── Job Skills ──
 
-    return JobSkillModel.fromJson(
-      _mapFromResponse(response),
-    );
+  Future<List<JobSkillModel>> getJobSkills(int jobId) async {
+    final response = await apiClient.get(ApiConstants.jobSkills(jobId));
+    // Returns a plain list
+    return _listFromResponse(response, JobSkillModel.fromJson);
   }
 
-  Future<void> deleteSkill(
-    int jobId,
-    int skillId,
-  ) async {
-    await apiClient.delete(
-      '/jobs/$jobId/skills/$skillId',
-    );
+  Future<void> addJobSkill(int jobId, Map<String, dynamic> data) async {
+    await apiClient.post(ApiConstants.jobSkills(jobId), body: data);
   }
 
-  Future<List<EvaluationCriterionModel>> getCriteria(
-    int jobId,
-  ) async {
-    final response = await apiClient.get(
-      '/jobs/$jobId/criteria',
-    );
+  Future<void> deleteJobSkill(int jobId, int skillId) async {
+    await apiClient.delete(ApiConstants.jobSkill(jobId, skillId));
+  }
 
-    return _listFromResponse(
-      response,
-      EvaluationCriterionModel.fromJson,
-    );
+  // ── Evaluation Criteria ──
+  // Response: {"job_id": N, "total_weight": N, "criteria": [...]}
+
+  Future<List<EvaluationCriterionModel>> getCriteria(int jobId) async {
+    final response = await apiClient.get(ApiConstants.jobCriteria(jobId));
+    dynamic list;
+    if (response is Map<String, dynamic>) {
+      list = response['criteria'];
+    } else {
+      list = response;
+    }
+    if (list is! List) return [];
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map(EvaluationCriterionModel.fromJson)
+        .toList();
   }
 
   Future<EvaluationCriterionModel> addCriterion(
     int jobId,
     Map<String, dynamic> data,
   ) async {
-    final response = await apiClient.post(
-      '/jobs/$jobId/criteria',
-      body: data,
-    );
-
-    return EvaluationCriterionModel.fromJson(
-      _mapFromResponse(response),
-    );
+    final response =
+        await apiClient.post(ApiConstants.jobCriteria(jobId), body: data);
+    return EvaluationCriterionModel.fromJson(response as Map<String, dynamic>);
   }
 
   Future<EvaluationCriterionModel> updateCriterion(
-    int criterionId,
+    int jobId,
+    int criteriaId,
     Map<String, dynamic> data,
   ) async {
     final response = await apiClient.put(
-      '/criteria/$criterionId',
+      ApiConstants.jobCriterion(jobId, criteriaId),
       body: data,
     );
-
-    return EvaluationCriterionModel.fromJson(
-      _mapFromResponse(response),
-    );
+    return EvaluationCriterionModel.fromJson(response as Map<String, dynamic>);
   }
 
-  Future<void> deleteCriterion(
-    int criterionId,
-  ) async {
-    await apiClient.delete(
-      '/criteria/$criterionId',
-    );
+  Future<void> deleteCriterion(int jobId, int criteriaId) async {
+    await apiClient.delete(ApiConstants.jobCriterion(jobId, criteriaId));
   }
 
-  Future<void> rankJob(int jobId) async {
-    await apiClient.post(
-      '/jobs/$jobId/rank',
-    );
-  }
-
-  Future<List<RankingResultModel>> getRankings(
-    int jobId,
-  ) async {
-    final response = await apiClient.get(
-      '/jobs/$jobId/rankings',
-    );
-
-    return _listFromResponse(
-      response,
-      RankingResultModel.fromJson,
-    );
-  }
-
-  Map<String, dynamic> _mapFromResponse(
-    dynamic response,
-  ) {
-    if (response is Map<String, dynamic>) {
-      final data = response['data'];
-
-      if (data is Map<String, dynamic>) {
-        return data;
-      }
-
-      return response;
-    }
-
-    throw Exception('Invalid API response');
-  }
+  // ── Helpers ──
 
   List<T> _listFromResponse<T>(
     dynamic response,
     T Function(Map<String, dynamic>) parser,
   ) {
-    dynamic data = response;
-
-    if (response is Map<String, dynamic>) {
-      data = response['data'] ??
-          response['items'] ??
-          response['results'];
+    if (response is List) {
+      return response.whereType<Map<String, dynamic>>().map(parser).toList();
     }
-
-    if (data is! List) {
-      return [];
-    }
-
-    return data
-        .whereType<Map<String, dynamic>>()
-        .map(parser)
-        .toList();
+    return [];
   }
 }

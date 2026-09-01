@@ -1,170 +1,44 @@
 import 'candidate_remote_data_source.dart';
-
+import 'models/candidate_experience_model.dart';
 import 'models/candidate_model.dart';
-import 'models/experience_model.dart';
-import 'models/project_model.dart';
-import 'models/qualification_model.dart';
+import 'models/candidate_project_model.dart';
+import 'models/candidate_qualification_model.dart';
+import 'models/candidate_skill_model.dart';
 
 class CandidateRepository {
-  final CandidateRemoteDataSource remoteDataSource;
+  final CandidateRemoteDataSource _dataSource;
 
-  CandidateRepository(this.remoteDataSource);
+  CandidateRepository(this._dataSource);
 
-  // ============================================================
-  // CANDIDATES
-  // ============================================================
+  Future<List<CandidateModel>> getCandidates() =>
+      _dataSource.getCandidates();
 
-  Future<List<CandidateModel>> getCandidates() {
-    return remoteDataSource.getCandidates();
-  }
+  Future<CandidateModel> getCandidate(int candidateId) =>
+      _dataSource.getCandidate(candidateId);
 
-  Future<CandidateModel> getCandidate(
-    String candidateId,
-  ) {
-    return remoteDataSource.getCandidate(candidateId);
-  }
+  Future<List<CandidateSkillModel>> getCandidateSkills(int candidateId) =>
+      _dataSource.getCandidateSkills(candidateId);
 
-  Future<CandidateModel> createCandidate(
-    CandidateModel candidate,
-  ) {
-    return remoteDataSource.createCandidate(candidate);
-  }
+  Future<List<CandidateExperienceModel>> getCandidateExperience(
+          int candidateId) =>
+      _dataSource.getCandidateExperience(candidateId);
 
-  Future<CandidateModel> updateCandidate(
-    String candidateId,
-    CandidateModel candidate,
-  ) {
-    return remoteDataSource.updateCandidate(
-      candidateId,
-      candidate,
-    );
-  }
+  Future<List<CandidateQualificationModel>> getCandidateQualifications(
+          int candidateId) =>
+      _dataSource.getCandidateQualifications(candidateId);
 
-  Future<void> deleteCandidate(
-    String candidateId,
-  ) {
-    return remoteDataSource.deleteCandidate(
-      candidateId,
-    );
-  }
+  Future<List<CandidateProjectModel>> getCandidateProjects(
+          int candidateId) =>
+      _dataSource.getCandidateProjects(candidateId);
 
-  // ============================================================
-  // QUALIFICATIONS
-  // ============================================================
+  Future<void> addQualification(
+          int candidateId, Map<String, dynamic> data) =>
+      _dataSource.addQualification(candidateId, data);
 
-  Future<List<QualificationModel>> getQualifications(
-    String candidateId,
-  ) {
-    return remoteDataSource.getQualifications(
-      candidateId,
-    );
-  }
+  Future<void> addExperience(
+          int candidateId, Map<String, dynamic> data) =>
+      _dataSource.addExperience(candidateId, data);
 
-  Future<QualificationModel> createQualification(
-    String candidateId,
-    QualificationModel qualification,
-  ) {
-    return remoteDataSource.createQualification(
-      candidateId,
-      qualification,
-    );
-  }
-
-  Future<QualificationModel> updateQualification(
-    String qualificationId,
-    QualificationModel qualification,
-  ) {
-    return remoteDataSource.updateQualification(
-      qualificationId,
-      qualification,
-    );
-  }
-
-  Future<void> deleteQualification(
-    String qualificationId,
-  ) {
-    return remoteDataSource.deleteQualification(
-      qualificationId,
-    );
-  }
-
-  // ============================================================
-  // EXPERIENCE
-  // ============================================================
-
-  Future<List<ExperienceModel>> getExperience(
-    String candidateId,
-  ) {
-    return remoteDataSource.getExperience(
-      candidateId,
-    );
-  }
-
-  Future<ExperienceModel> createExperience(
-    String candidateId,
-    ExperienceModel experience,
-  ) {
-    return remoteDataSource.createExperience(
-      candidateId,
-      experience,
-    );
-  }
-
-  Future<ExperienceModel> updateExperience(
-    String experienceId,
-    ExperienceModel experience,
-  ) {
-    return remoteDataSource.updateExperience(
-      experienceId,
-      experience,
-    );
-  }
-
-  Future<void> deleteExperience(
-    String experienceId,
-  ) {
-    return remoteDataSource.deleteExperience(
-      experienceId,
-    );
-  }
-
-  // ============================================================
-  // PROJECTS
-  // ============================================================
-
-  Future<List<ProjectModel>> getProjects(
-    String candidateId,
-  ) {
-    return remoteDataSource.getProjects(
-      candidateId,
-    );
-  }
-
-  Future<ProjectModel> createProject(
-    String candidateId,
-    ProjectModel project,
-  ) {
-    return remoteDataSource.createProject(
-      candidateId,
-      project,
-    );
-  }
-
-  Future<ProjectModel> updateProject(
-    String projectId,
-    ProjectModel project,
-  ) {
-    return remoteDataSource.updateProject(
-      projectId,
-      project,
-    );
-  }
-
-  Future<void> deleteProject(
-    String projectId,
-  ) {
-    return remoteDataSource.deleteProject(
-      projectId,
-    );
-  }
+  Future<void> addProject(int candidateId, Map<String, dynamic> data) =>
+      _dataSource.addProject(candidateId, data);
 }

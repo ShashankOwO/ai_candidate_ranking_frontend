@@ -1,40 +1,22 @@
-
+/// Skill associated with a job (from GET /jobs/{id}/skills).
 class JobSkillModel {
-  final int id;
-  final String name;
-  final bool required;
-  final String? type;
+  final int skillId;
+  final String skillName;
+  final String skillType; // "required" or "preferred"
 
   const JobSkillModel({
-    required this.id,
-    required this.name,
-    required this.required,
-    this.type,
+    required this.skillId,
+    required this.skillName,
+    required this.skillType,
   });
 
-  factory JobSkillModel.fromJson(
-    Map<String, dynamic> json,
-  ) {
+  factory JobSkillModel.fromJson(Map<String, dynamic> json) {
     return JobSkillModel(
-      id: json['id'] is int
-          ? json['id']
-          : int.tryParse(
-                '${json['id']}',
-              ) ??
-              0,
-      name: json['name']?.toString() ?? '',
-      required: json['required'] == true,
-      type: json['type']?.toString(),
+      skillId: json['skill_id'] ?? json['id'] ?? 0,
+      skillName: json['skill_name'] ?? json['name'] ?? '',
+      skillType: json['skill_type'] ?? json['type'] ?? 'required',
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'required': required,
-      if (type != null) 'type': type,
-    };
-  }
+  bool get isRequired => skillType == 'required';
 }
-

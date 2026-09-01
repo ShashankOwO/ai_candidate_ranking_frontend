@@ -1,47 +1,51 @@
+// Rankings response item:
+// {
+//   "ranking_id": 1,
+//   "candidate_id": 5,
+//   "final_score": 78.5,
+//   "rank_position": 1,
+//   "recommendation": "Strong Match",
+//   "created_at": "...",
+//   "updated_at": "..."
+// }
+// Note: candidate_name is NOT returned — must be fetched separately if needed.
 class RankingResultModel {
+  final int rankingId;
   final int candidateId;
-  final String candidateName;
-  final int rank;
-  final double score;
-  final String? skillMatchSummary;
-  final String? status;
+  final double finalScore;
+  final int rankPosition;
+  final String? recommendation;
 
   const RankingResultModel({
+    required this.rankingId,
     required this.candidateId,
-    required this.candidateName,
-    required this.rank,
-    required this.score,
-    this.skillMatchSummary,
-    this.status,
+    required this.finalScore,
+    required this.rankPosition,
+    this.recommendation,
   });
 
-  factory RankingResultModel.fromJson(
-    Map<String, dynamic> json,
-  ) {
-    final candidate = json['candidate'];
-
+  factory RankingResultModel.fromJson(Map<String, dynamic> json) {
     return RankingResultModel(
-      candidateId: _toInt(
-        json['candidate_id'] ??
-            (candidate is Map ? candidate['id'] : null),
-      ),
-      candidateName: json['candidate_name']?.toString() ??
-          json['name']?.toString() ??
-          (candidate is Map
-              ? candidate['name']?.toString()
-              : null) ??
-          'Unknown Candidate',
-      rank: _toInt(json['rank'] ?? json['ranking']),
-      score: _toDouble(
-        json['score'] ??
-            json['ranking_score'] ??
-            json['match_score'],
-      ),
-      skillMatchSummary: json['skill_match_summary']?.toString() ??
-          json['skills_summary']?.toString(),
-      status: json['status']?.toString(),
+      rankingId: _toInt(json['ranking_id']),
+      candidateId: _toInt(json['candidate_id']),
+      finalScore: _toDouble(json['final_score'] ?? json['score']),
+      rankPosition: _toInt(json['rank_position'] ?? json['rank']),
+      recommendation: json['recommendation']?.toString(),
     );
   }
+
+  // Backend uses: "Strong Match" | "Good Match" | "Potential Match" | "Not Recommended"
+  String get recommendationLabel => recommendation ?? _defaultRecommendation;
+
+  String get _defaultRecommendation {
+    if (finalScore >= 80) return 'Strong Match';
+    if (finalScore >= 60) return 'Good Match';
+    if (finalScore >= 40) return 'Potential Match';
+    return 'Not Recommended';
+  }
+
+  // Candidate name is not in response; display "Candidate #id" as fallback
+  String get candidateName => 'Candidate #$candidateId';
 
   static int _toInt(dynamic value) {
     if (value is int) return value;
