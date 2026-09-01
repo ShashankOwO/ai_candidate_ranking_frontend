@@ -10,7 +10,6 @@ import '../data/models/candidate_qualification_model.dart';
 import '../data/models/candidate_skill_model.dart';
 import 'add_candidate_skill_dialog.dart';
 import 'add_experience_dialog.dart';
-import 'add_project_dialog.dart';
 import 'add_qualification_dialog.dart';
 import 'candidate_form_dialog.dart';
 import 'edit_experience_dialog.dart';
