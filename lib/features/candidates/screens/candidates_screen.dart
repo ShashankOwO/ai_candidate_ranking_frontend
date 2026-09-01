@@ -198,6 +198,8 @@ class _CandidatesScreenState extends State<CandidatesScreen> {
   }
 }
 
+
+
 // ── Subwidgets ───────────────────────────────────────────────────────────────
 
 class _CandidateCard extends StatelessWidget {

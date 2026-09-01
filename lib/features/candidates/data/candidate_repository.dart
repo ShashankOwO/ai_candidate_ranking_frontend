@@ -59,15 +59,27 @@ class CandidateRepository {
           int candidateId, int experienceId, Map<String, dynamic> data) =>
       _dataSource.updateExperience(candidateId, experienceId, data);
 
+  Future<void> deleteExperience(int candidateId, int experienceId) =>
+      _dataSource.deleteExperience(candidateId, experienceId);
+
   Future<void> updateQualification(
           int candidateId, int qualificationId, Map<String, dynamic> data) =>
       _dataSource.updateQualification(candidateId, qualificationId, data);
+
+  Future<void> deleteQualification(int candidateId, int qualificationId) =>
+      _dataSource.deleteQualification(candidateId, qualificationId);
 
   Future<void> updateProject(
           int candidateId, int projectId, Map<String, dynamic> data) =>
       _dataSource.updateProject(candidateId, projectId, data);
 
+  Future<void> deleteProject(int candidateId, int projectId) =>
+      _dataSource.deleteProject(candidateId, projectId);
+
   Future<void> updateSkill(
           int candidateId, int skillId, Map<String, dynamic> data) =>
       _dataSource.updateSkill(candidateId, skillId, data);
+
+  Future<void> deleteSkill(int candidateId, int skillId) =>
+      _dataSource.deleteSkill(candidateId, skillId);
 }

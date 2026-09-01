@@ -16,18 +16,21 @@ class CandidateRemoteDataSource {
     return _listFromResponse(response, CandidateModel.fromJson);
   }
 
-  /// Backend has no GET /candidates/{id} — only PUT and DELETE.
-  /// So we fetch the full list and filter.
   Future<CandidateModel> getCandidate(int candidateId) async {
-    final all = await getCandidates();
-    return all.firstWhere(
-      (c) => c.candidateId == candidateId,
-      orElse: () => throw Exception('Candidate #$candidateId not found'),
-    );
+    try {
+      final response = await apiClient.get(ApiConstants.candidate(candidateId));
+      return CandidateModel.fromJson(response as Map<String, dynamic>);
+    } catch (_) {
+      // Fallback to searching all candidates
+      final all = await getCandidates();
+      return all.firstWhere(
+        (c) => c.candidateId == candidateId,
+        orElse: () => throw Exception('Candidate #$candidateId not found'),
+      );
+    }
   }
 
   // POST /candidates/create
-  // Body: { full_name, contact_no?, email_address? }
   Future<CandidateModel> createCandidate(Map<String, dynamic> data) async {
     final response =
         await apiClient.post(ApiConstants.createCandidate, body: data);
@@ -70,18 +73,11 @@ class CandidateRemoteDataSource {
     return _listFromResponse(response, CandidateQualificationModel.fromJson);
   }
 
-  /// Backend has POST /{candidate_id}/projects but no GET.
-  /// Try the GET endpoint; if it returns 404/405, return empty list.
   Future<List<CandidateProjectModel>> getCandidateProjects(
       int candidateId) async {
-    try {
-      final response =
-          await apiClient.get(ApiConstants.candidateProjects(candidateId));
-      return _listFromResponse(response, CandidateProjectModel.fromJson);
-    } catch (e) {
-      // No GET endpoint exists — silently return empty.
-      return [];
-    }
+    final response =
+        await apiClient.get(ApiConstants.candidateProjects(candidateId));
+    return _listFromResponse(response, CandidateProjectModel.fromJson);
   }
 
   Future<void> addQualification(
@@ -125,12 +121,28 @@ class CandidateRemoteDataSource {
     );
   }
 
+  // DELETE /candidates/{id}/experience/{exp_id}
+  Future<void> deleteExperience(
+      int candidateId, int experienceId) async {
+    await apiClient.delete(
+      '${ApiConstants.candidateExperience(candidateId)}/$experienceId',
+    );
+  }
+
   // PUT /candidates/{id}/qualifications/{qual_id}
   Future<void> updateQualification(
       int candidateId, int qualificationId, Map<String, dynamic> data) async {
     await apiClient.put(
       '${ApiConstants.candidateQualifications(candidateId)}/$qualificationId',
       body: data,
+    );
+  }
+
+  // DELETE /candidates/{id}/qualifications/{qual_id}
+  Future<void> deleteQualification(
+      int candidateId, int qualificationId) async {
+    await apiClient.delete(
+      '${ApiConstants.candidateQualifications(candidateId)}/$qualificationId',
     );
   }
 
@@ -143,12 +155,28 @@ class CandidateRemoteDataSource {
     );
   }
 
+  // DELETE /candidates/{id}/projects/{proj_id}
+  Future<void> deleteProject(
+      int candidateId, int projectId) async {
+    await apiClient.delete(
+      '${ApiConstants.candidateProjects(candidateId)}/$projectId',
+    );
+  }
+
   // PUT /candidates/{id}/skills/{skill_id}
   Future<void> updateSkill(
       int candidateId, int skillId, Map<String, dynamic> data) async {
     await apiClient.put(
       '${ApiConstants.candidateSkills(candidateId)}/$skillId',
       body: data,
+    );
+  }
+
+  // DELETE /candidates/{id}/skills/{skill_id}
+  Future<void> deleteSkill(
+      int candidateId, int skillId) async {
+    await apiClient.delete(
+      '${ApiConstants.candidateSkills(candidateId)}/$skillId',
     );
   }
 
