@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
-
+ 
 import '../../../core/theme/app_colors.dart';
 import '../../../main.dart';
-
+ 
 /// Dialog to manually add a qualification/education to a candidate.
 /// POST /candidates/{id}/qualifications
 /// Body: { university, degree, specialization?, percentage?, passed_out_year?, joining_year? }
 class AddQualificationDialog extends StatefulWidget {
   final int candidateId;
-
+ 
   const AddQualificationDialog({super.key, required this.candidateId});
-
+ 
   @override
   State<AddQualificationDialog> createState() =>
       _AddQualificationDialogState();
 }
-
+ 
 class _AddQualificationDialogState extends State<AddQualificationDialog> {
   final _formKey = GlobalKey<FormState>();
   final universityCtrl = TextEditingController();
@@ -25,7 +25,7 @@ class _AddQualificationDialogState extends State<AddQualificationDialog> {
   final passedOutCtrl = TextEditingController();
   final joiningCtrl = TextEditingController();
   bool saving = false;
-
+ 
   @override
   void dispose() {
     universityCtrl.dispose();
@@ -36,11 +36,11 @@ class _AddQualificationDialogState extends State<AddQualificationDialog> {
     joiningCtrl.dispose();
     super.dispose();
   }
-
+ 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => saving = true);
-
+ 
     try {
       await candidateRepository.addQualification(widget.candidateId, {
         'university': universityCtrl.text.trim(),
@@ -69,7 +69,7 @@ class _AddQualificationDialogState extends State<AddQualificationDialog> {
       if (mounted) setState(() => saving = false);
     }
   }
-
+ 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(

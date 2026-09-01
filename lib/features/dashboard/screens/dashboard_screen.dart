@@ -8,7 +8,6 @@ import '../../auth/screens/login_screen.dart';
 import '../../candidates/screens/candidates_screen.dart';
 import '../../jobs/data/models/job_model.dart';
 import '../../jobs/presentation/pages/job_detail_page.dart';
-import '../../jobs/presentation/pages/jobs_page.dart';
 import '../../jobs/presentation/widgets/job_form_page.dart';
 import '../../resumes/screens/upload_resumes_screen.dart';
 
@@ -22,7 +21,6 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   UserModel? user;
   List<JobModel> jobs = [];
-  int candidateCount = 0;
   bool loading = true;
 
   @override
@@ -38,7 +36,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final results = await Future.wait([
         authRepository.getCurrentUser(),
         jobRepository.getJobs(),
-        candidateRepository.getCandidates(),
       ]);
 
       if (!mounted) return;
@@ -46,7 +43,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       setState(() {
         user = results[0] as UserModel;
         jobs = results[1] as List<JobModel>;
-        candidateCount = (results[2] as List).length;
         loading = false;
       });
     } catch (e) {
@@ -56,15 +52,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       // If auth fails, still show dashboard with stored username
       try {
-        final results = await Future.wait([
-          jobRepository.getJobs(),
-          candidateRepository.getCandidates(),
-        ]);
+        final jobList = await jobRepository.getJobs();
         if (!mounted) return;
-        setState(() {
-          jobs = results[0] as List<JobModel>;
-          candidateCount = (results[1] as List).length;
-        });
+        setState(() => jobs = jobList);
       } catch (_) {}
     }
   }
@@ -170,7 +160,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                   const SizedBox(height: 24),
 
-                  // Stats Row — each card is tappable
+                  // Stats Row
                   Row(
                     children: [
                       Expanded(
@@ -179,11 +169,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           label: 'Total Jobs',
                           value: '${jobs.length}',
                           color: AppColors.primary,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const JobsPage()),
-                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -191,27 +176,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: _StatCard(
                           icon: Icons.people_outline,
                           label: 'Candidates',
-                          value: '$candidateCount',
+                          value: '—',
                           color: AppColors.success,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const CandidatesScreen()),
-                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: _StatCard(
-                          icon: Icons.upload_file_outlined,
-                          label: 'Upload',
-                          value: '+',
+                          icon: Icons.description_outlined,
+                          label: 'Resumes',
+                          value: '—',
                           color: AppColors.info,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const UploadResumesScreen()),
-                          ),
                         ),
                       ),
                     ],
@@ -328,10 +303,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             title: const Text('Jobs'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const JobsPage()),
-              );
+              // Already on dashboard which shows jobs
             },
           ),
           ListTile(
@@ -383,40 +355,34 @@ class _StatCard extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
-  final VoidCallback? onTap;
 
   const _StatCard({
     required this.icon,
     required this.label,
     required this.value,
     required this.color,
-    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Icon(icon, color: color, size: 28),
-              const SizedBox(height: 8),
-              Text(
-                value,
-                style: AppTextStyles.title.copyWith(color: color),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: AppTextStyles.caption,
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: AppTextStyles.title.copyWith(color: color),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: AppTextStyles.caption,
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );
