@@ -1,4 +1,5 @@
 class CandidateProjectModel {
+  final int? projectId;
   final String projectName;
   final String? description;
   final String? technologies;
@@ -6,6 +7,7 @@ class CandidateProjectModel {
   final String? duration;
 
   const CandidateProjectModel({
+    this.projectId,
     required this.projectName,
     this.description,
     this.technologies,
@@ -15,6 +17,9 @@ class CandidateProjectModel {
 
   factory CandidateProjectModel.fromJson(Map<String, dynamic> json) {
     return CandidateProjectModel(
+      projectId: json['project_id'] is int
+          ? json['project_id']
+          : int.tryParse('${json['project_id'] ?? ''}'),
       projectName: json['project_name']?.toString() ?? '',
       description: json['description']?.toString(),
       technologies: json['technologies']?.toString(),

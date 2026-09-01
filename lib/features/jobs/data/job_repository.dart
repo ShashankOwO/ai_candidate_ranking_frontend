@@ -25,6 +25,9 @@ class JobRepository {
   Future<List<SkillModel>> getAvailableSkills() =>
       _dataSource.getAvailableSkills();
 
+  Future<SkillModel> createSkill(Map<String, dynamic> data) =>
+      _dataSource.createSkill(data);
+
   // ── Job Skills ──
 
   Future<List<JobSkillModel>> getJobSkills(int jobId) =>
