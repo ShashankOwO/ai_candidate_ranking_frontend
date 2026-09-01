@@ -1,4 +1,5 @@
 class CandidateExperienceModel {
+  final int? experienceId;
   final String companyName;
   final String jobTitle;
   final String? startDate;
@@ -7,6 +8,7 @@ class CandidateExperienceModel {
   final String? description;
 
   const CandidateExperienceModel({
+    this.experienceId,
     required this.companyName,
     required this.jobTitle,
     this.startDate,
@@ -17,6 +19,7 @@ class CandidateExperienceModel {
 
   factory CandidateExperienceModel.fromJson(Map<String, dynamic> json) {
     return CandidateExperienceModel(
+      experienceId: json['experience_id'] is int ? json['experience_id'] : int.tryParse('${json['experience_id'] ?? ''}'),
       companyName: json['company_name']?.toString() ?? '',
       jobTitle: json['job_title']?.toString() ?? '',
       startDate: json['start_date']?.toString(),
