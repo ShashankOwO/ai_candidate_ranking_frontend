@@ -16,7 +16,6 @@ import 'candidate_form_dialog.dart';
 import 'edit_experience_dialog.dart';
 import 'edit_project_dialog.dart';
 import 'edit_qualification_dialog.dart';
-import 'edit_skill_dialog.dart';
 
 class CandidateDetailScreen extends StatefulWidget {
   final int candidateId;
@@ -296,7 +295,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
     );
   }
 
-  // ── Skills Tab ─────────────────────────────────────────────
+ 
   Widget _buildSkillsTab() {
     if (skills.isEmpty) return _emptyState('No skills extracted');
     return ListView.builder(
@@ -331,25 +330,6 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
               style: AppTextStyles.caption.copyWith(
                 color: hasGap ? AppColors.warning : null,
               ),
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.edit_outlined, size: 18),
-              color: AppColors.textSecondary,
-              tooltip: 'Edit skill proficiency & years',
-              onPressed: () async {
-                final result = await showDialog<bool>(
-                  context: context,
-                  builder: (_) => EditSkillDialog(
-                    candidateId: widget.candidateId,
-                    existing: skill,
-                  ),
-                );
-                if (result == true && mounted) {
-                  final r = await candidateRepository
-                      .getCandidateSkills(widget.candidateId);
-                  setState(() => skills = r);
-                }
-              },
             ),
           ),
         );
