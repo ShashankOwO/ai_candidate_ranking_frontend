@@ -108,6 +108,50 @@ class CandidateRemoteDataSource {
     );
   }
 
+  Future<void> addSkill(
+      int candidateId, Map<String, dynamic> data) async {
+    await apiClient.post(
+      ApiConstants.candidateSkills(candidateId),
+      body: data,
+    );
+  }
+
+  // PUT /candidates/{id}/experience/{exp_id}
+  Future<void> updateExperience(
+      int candidateId, int experienceId, Map<String, dynamic> data) async {
+    await apiClient.put(
+      '${ApiConstants.candidateExperience(candidateId)}/$experienceId',
+      body: data,
+    );
+  }
+
+  // PUT /candidates/{id}/qualifications/{qual_id}
+  Future<void> updateQualification(
+      int candidateId, int qualificationId, Map<String, dynamic> data) async {
+    await apiClient.put(
+      '${ApiConstants.candidateQualifications(candidateId)}/$qualificationId',
+      body: data,
+    );
+  }
+
+  // PUT /candidates/{id}/projects/{proj_id}
+  Future<void> updateProject(
+      int candidateId, int projectId, Map<String, dynamic> data) async {
+    await apiClient.put(
+      '${ApiConstants.candidateProjects(candidateId)}/$projectId',
+      body: data,
+    );
+  }
+
+  // PUT /candidates/{id}/skills/{skill_id}
+  Future<void> updateSkill(
+      int candidateId, int skillId, Map<String, dynamic> data) async {
+    await apiClient.put(
+      '${ApiConstants.candidateSkills(candidateId)}/$skillId',
+      body: data,
+    );
+  }
+
   List<T> _listFromResponse<T>(
     dynamic response,
     T Function(Map<String, dynamic>) parser,

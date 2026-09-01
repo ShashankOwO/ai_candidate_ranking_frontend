@@ -8,7 +8,15 @@ import '../data/models/candidate_model.dart';
 import '../data/models/candidate_project_model.dart';
 import '../data/models/candidate_qualification_model.dart';
 import '../data/models/candidate_skill_model.dart';
+import 'add_candidate_skill_dialog.dart';
+import 'add_experience_dialog.dart';
+import 'add_project_dialog.dart';
+import 'add_qualification_dialog.dart';
 import 'candidate_form_dialog.dart';
+import 'edit_experience_dialog.dart';
+import 'edit_project_dialog.dart';
+import 'edit_qualification_dialog.dart';
+import 'edit_skill_dialog.dart';
 
 class CandidateDetailScreen extends StatefulWidget {
   final int candidateId;
@@ -100,6 +108,57 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
       await fn();
     } catch (e) {
       debugPrint('CandidateDetail: section load failed: $e');
+    }
+  }
+
+  static const _tabLabels = ['Skill', 'Experience', 'Education', 'Project'];
+
+  /// Opens the correct add-dialog for the currently active tab.
+  Future<void> _showAddDialog() async {
+    final tab = tabController.index;
+    bool? result;
+
+    switch (tab) {
+      case 0:
+        result = await showDialog<bool>(
+          context: context,
+          builder: (_) => AddCandidateSkillDialog(candidateId: widget.candidateId),
+        );
+        if (result == true && mounted) {
+          final r = await candidateRepository.getCandidateSkills(widget.candidateId);
+          setState(() => skills = r);
+        }
+        break;
+      case 1:
+        result = await showDialog<bool>(
+          context: context,
+          builder: (_) => AddExperienceDialog(candidateId: widget.candidateId),
+        );
+        if (result == true && mounted) {
+          final r = await candidateRepository.getCandidateExperience(widget.candidateId);
+          setState(() => experience = r);
+        }
+        break;
+      case 2:
+        result = await showDialog<bool>(
+          context: context,
+          builder: (_) => AddQualificationDialog(candidateId: widget.candidateId),
+        );
+        if (result == true && mounted) {
+          final r = await candidateRepository.getCandidateQualifications(widget.candidateId);
+          setState(() => qualifications = r);
+        }
+        break;
+      case 3:
+        result = await showDialog<bool>(
+          context: context,
+          builder: (_) => AddProjectDialog(candidateId: widget.candidateId),
+        );
+        if (result == true && mounted) {
+          final r = await candidateRepository.getCandidateProjects(widget.candidateId);
+          setState(() => projects = r);
+        }
+        break;
     }
   }
 
@@ -218,29 +277,79 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
           ),
         ],
       ),
+      // FAB changes label based on active tab
+      floatingActionButton: candidate == null
+          ? null
+          : AnimatedBuilder(
+              animation: tabController,
+              builder: (context, _) {
+                final label = _tabLabels[tabController.index];
+                return FloatingActionButton.extended(
+                  onPressed: _showAddDialog,
+                  icon: const Icon(Icons.add),
+                  label: Text('Add $label'),
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                );
+              },
+            ),
     );
   }
 
+  // ── Skills Tab ─────────────────────────────────────────────
   Widget _buildSkillsTab() {
     if (skills.isEmpty) return _emptyState('No skills extracted');
-
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 80),
       itemCount: skills.length,
       itemBuilder: (context, index) {
         final skill = skills[index];
+        final hasGap = skill.proficiency == null || skill.yearsExperience == null;
         return Card(
           margin: const EdgeInsets.only(bottom: 8),
           child: ListTile(
             leading: const Icon(Icons.code, color: AppColors.primary),
-            title: Text(skill.skillName, style: AppTextStyles.label),
+            title: Row(
+              children: [
+                Expanded(child: Text(skill.skillName, style: AppTextStyles.label)),
+                if (hasGap)
+                  Tooltip(
+                    message: 'Incomplete — tap edit to fill in missing info',
+                    child: Icon(Icons.warning_amber_rounded,
+                        size: 16, color: AppColors.warning),
+                  ),
+              ],
+            ),
             subtitle: Text(
               [
-                if (skill.proficiency != null) skill.proficiency!,
+                if (skill.proficiency != null) skill.proficiency!
+                else 'Proficiency: ?',
                 if (skill.yearsExperience != null)
-                  '${skill.yearsExperience} years',
+                  '${skill.yearsExperience} yrs'
+                else 'Years: ?',
               ].join(' · '),
-              style: AppTextStyles.caption,
+              style: AppTextStyles.caption.copyWith(
+                color: hasGap ? AppColors.warning : null,
+              ),
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              color: AppColors.textSecondary,
+              tooltip: 'Edit skill proficiency & years',
+              onPressed: () async {
+                final result = await showDialog<bool>(
+                  context: context,
+                  builder: (_) => EditSkillDialog(
+                    candidateId: widget.candidateId,
+                    existing: skill,
+                  ),
+                );
+                if (result == true && mounted) {
+                  final r = await candidateRepository
+                      .getCandidateSkills(widget.candidateId);
+                  setState(() => skills = r);
+                }
+              },
             ),
           ),
         );
@@ -248,45 +357,93 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
     );
   }
 
+  // ── Experience Tab ─────────────────────────────────────────
   Widget _buildExperienceTab() {
     if (experience.isEmpty) return _emptyState('No experience extracted');
-
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 80),
       itemCount: experience.length,
       itemBuilder: (context, index) {
         final exp = experience[index];
+        final hasMissing = exp.years == null || exp.description == null;
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
+            padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(exp.companyName, style: AppTextStyles.label),
-                const SizedBox(height: 4),
-                Text(exp.jobTitle, style: AppTextStyles.body),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(Icons.calendar_today,
-                        size: 14, color: AppColors.textSecondary),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${exp.startDate ?? '?'} – ${exp.endDate ?? 'Present'}',
-                      style: AppTextStyles.caption,
-                    ),
-                    if (exp.years != null) ...[
-                      const SizedBox(width: 12),
-                      Text('${exp.years} years',
-                          style: AppTextStyles.caption),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(child: Text(exp.companyName, style: AppTextStyles.label)),
+                          if (hasMissing)
+                            Icon(Icons.warning_amber_rounded,
+                                size: 16, color: AppColors.warning),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(exp.jobTitle, style: AppTextStyles.body),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(Icons.calendar_today,
+                              size: 13, color: AppColors.textSecondary),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${exp.startDate ?? '?'} – ${exp.endDate ?? 'Present'}',
+                            style: AppTextStyles.caption,
+                          ),
+                          if (exp.years != null) ...[
+                            const SizedBox(width: 10),
+                            Text('${exp.years} yrs',
+                                style: AppTextStyles.caption),
+                          ] else ...[
+                            const SizedBox(width: 10),
+                            Text('Years: ?',
+                                style: AppTextStyles.caption
+                                    .copyWith(color: AppColors.warning)),
+                          ],
+                        ],
+                      ),
+                      if (exp.description != null) ...[
+                        const SizedBox(height: 6),
+                        Text(exp.description!,
+                            style: AppTextStyles.bodySecondary,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis),
+                      ] else ...[
+                        const SizedBox(height: 4),
+                        Text('Description missing',
+                            style: AppTextStyles.caption
+                                .copyWith(color: AppColors.warning)),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-                if (exp.description != null) ...[
-                  const SizedBox(height: 8),
-                  Text(exp.description!, style: AppTextStyles.bodySecondary),
-                ],
+                // Edit button
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  color: AppColors.textSecondary,
+                  tooltip: 'Edit / add missing info',
+                  onPressed: () async {
+                    final result = await showDialog<bool>(
+                      context: context,
+                      builder: (_) => EditExperienceDialog(
+                        candidateId: widget.candidateId,
+                        existing: exp,
+                      ),
+                    );
+                    if (result == true && mounted) {
+                      final r = await candidateRepository
+                          .getCandidateExperience(widget.candidateId);
+                      setState(() => experience = r);
+                    }
+                  },
+                ),
               ],
             ),
           ),
@@ -295,45 +452,98 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
     );
   }
 
+  // ── Education Tab ──────────────────────────────────────────
   Widget _buildQualificationsTab() {
-    if (qualifications.isEmpty) {
-      return _emptyState('No qualifications extracted');
-    }
-
+    if (qualifications.isEmpty) return _emptyState('No qualifications extracted');
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 80),
       itemCount: qualifications.length,
       itemBuilder: (context, index) {
         final qual = qualifications[index];
+        final hasMissing = qual.percentage == null || qual.passedOutYear == null;
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
+            padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (qual.university != null)
-                  Text(qual.university!, style: AppTextStyles.label),
-                const SizedBox(height: 4),
-                Text(
-                  [
-                    qual.degree,
-                    qual.specialization,
-                  ].where((e) => e != null).join(' – '),
-                  style: AppTextStyles.body,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          if (qual.university != null)
+                            Expanded(
+                              child: Text(qual.university!,
+                                  style: AppTextStyles.label),
+                            ),
+                          if (hasMissing)
+                            Icon(Icons.warning_amber_rounded,
+                                size: 16, color: AppColors.warning),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        [
+                          qual.degree,
+                          qual.specialization,
+                        ].whereType<String>().join(' – '),
+                        style: AppTextStyles.body,
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          if (qual.percentage != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text('${qual.percentage}%',
+                                  style: AppTextStyles.caption
+                                      .copyWith(color: AppColors.primary,
+                                          fontWeight: FontWeight.w600)),
+                            )
+                          else
+                            Text('Percentage: ?',
+                                style: AppTextStyles.caption
+                                    .copyWith(color: AppColors.warning)),
+                          const Spacer(),
+                          if (qual.passedOutYear != null)
+                            Text('Class of ${qual.passedOutYear}',
+                                style: AppTextStyles.caption)
+                          else
+                            Text('Year: ?',
+                                style: AppTextStyles.caption
+                                    .copyWith(color: AppColors.warning)),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    if (qual.percentage != null)
-                      Text('${qual.percentage}%',
-                          style: AppTextStyles.label
-                              .copyWith(color: AppColors.primary)),
-                    const Spacer(),
-                    if (qual.passedOutYear != null)
-                      Text('Class of ${qual.passedOutYear}',
-                          style: AppTextStyles.caption),
-                  ],
+                // Edit button
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  color: AppColors.textSecondary,
+                  tooltip: 'Edit / add missing info',
+                  onPressed: () async {
+                    final result = await showDialog<bool>(
+                      context: context,
+                      builder: (_) => EditQualificationDialog(
+                        candidateId: widget.candidateId,
+                        existing: qual,
+                      ),
+                    );
+                    if (result == true && mounted) {
+                      final r = await candidateRepository
+                          .getCandidateQualifications(widget.candidateId);
+                      setState(() => qualifications = r);
+                    }
+                  },
                 ),
               ],
             ),
@@ -343,54 +553,104 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
     );
   }
 
+  // ── Projects Tab ───────────────────────────────────────────
   Widget _buildProjectsTab() {
     if (projects.isEmpty) return _emptyState('No projects extracted');
-
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 80),
       itemCount: projects.length,
       itemBuilder: (context, index) {
         final project = projects[index];
+        final hasMissing = project.role == null || project.duration == null;
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
+            padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(project.projectName, style: AppTextStyles.label),
-                if (project.description != null) ...[
-                  const SizedBox(height: 8),
-                  Text(project.description!,
-                      style: AppTextStyles.bodySecondary),
-                ],
-                const SizedBox(height: 8),
-                if (project.technologies != null)
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
-                    children: project.technologies!
-                        .split(',')
-                        .map((tech) => Chip(
-                              label: Text(tech.trim(),
-                                  style: const TextStyle(fontSize: 12)),
-                              materialTapTargetSize:
-                                  MaterialTapTargetSize.shrinkWrap,
-                              visualDensity: VisualDensity.compact,
-                            ))
-                        .toList(),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(project.projectName,
+                                style: AppTextStyles.label),
+                          ),
+                          if (hasMissing)
+                            Icon(Icons.warning_amber_rounded,
+                                size: 16, color: AppColors.warning),
+                        ],
+                      ),
+                      if (project.description != null) ...[
+                        const SizedBox(height: 6),
+                        Text(project.description!,
+                            style: AppTextStyles.bodySecondary,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis),
+                      ],
+                      const SizedBox(height: 6),
+                      if (project.technologies != null)
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: project.technologies!
+                              .split(',')
+                              .take(5)
+                              .map((tech) => Chip(
+                                    label: Text(tech.trim(),
+                                        style: const TextStyle(fontSize: 11)),
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                    visualDensity: VisualDensity.compact,
+                                    padding: EdgeInsets.zero,
+                                  ))
+                              .toList(),
+                        ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          if (project.role != null)
+                            Text('Role: ${project.role}',
+                                style: AppTextStyles.caption)
+                          else
+                            Text('Role: ?',
+                                style: AppTextStyles.caption
+                                    .copyWith(color: AppColors.warning)),
+                          const Spacer(),
+                          if (project.duration != null)
+                            Text(project.duration!,
+                                style: AppTextStyles.caption)
+                          else
+                            Text('Duration: ?',
+                                style: AppTextStyles.caption
+                                    .copyWith(color: AppColors.warning)),
+                        ],
+                      ),
+                    ],
                   ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    if (project.role != null)
-                      Text('Role: ${project.role}',
-                          style: AppTextStyles.caption),
-                    const Spacer(),
-                    if (project.duration != null)
-                      Text(project.duration!,
-                          style: AppTextStyles.caption),
-                  ],
+                ),
+                // Edit button
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  color: AppColors.textSecondary,
+                  tooltip: 'Edit / add missing info',
+                  onPressed: () async {
+                    final result = await showDialog<bool>(
+                      context: context,
+                      builder: (_) => EditProjectDialog(
+                        candidateId: widget.candidateId,
+                        existing: project,
+                      ),
+                    );
+                    if (result == true && mounted) {
+                      final r = await candidateRepository
+                          .getCandidateProjects(widget.candidateId);
+                      setState(() => projects = r);
+                    }
+                  },
                 ),
               ],
             ),

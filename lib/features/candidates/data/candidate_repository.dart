@@ -54,4 +54,20 @@ class CandidateRepository {
 
   Future<void> addSkill(int candidateId, Map<String, dynamic> data) =>
       _dataSource.addSkill(candidateId, data);
+
+  Future<void> updateExperience(
+          int candidateId, int experienceId, Map<String, dynamic> data) =>
+      _dataSource.updateExperience(candidateId, experienceId, data);
+
+  Future<void> updateQualification(
+          int candidateId, int qualificationId, Map<String, dynamic> data) =>
+      _dataSource.updateQualification(candidateId, qualificationId, data);
+
+  Future<void> updateProject(
+          int candidateId, int projectId, Map<String, dynamic> data) =>
+      _dataSource.updateProject(candidateId, projectId, data);
+
+  Future<void> updateSkill(
+          int candidateId, int skillId, Map<String, dynamic> data) =>
+      _dataSource.updateSkill(candidateId, skillId, data);
 }
