@@ -49,4 +49,9 @@ class ApiConstants {
   static const String resumes = '/resumes/all';
   static String resume(int id) => '/resumes/$id';
   static String resumeDownload(int id) => '/resumes/$id/download';
+
+  // Chatbot & MCP Tools — prefix /chatbot
+  static const String chatbotMessage = '/chatbot/message';
+  static String chatbotHistory(String sessionId) => '/chatbot/history/$sessionId';
+  static String chatbotSession(String sessionId) => '/chatbot/session/$sessionId';
 }
