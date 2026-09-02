@@ -5,12 +5,31 @@ import 'package:http_parser/http_parser.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
+import 'models/resume_model.dart';
 import 'models/resume_upload_model.dart';
 
 class ResumeRemoteDataSource {
   final ApiClient apiClient;
 
   ResumeRemoteDataSource(this.apiClient);
+
+  /// Fetch all resumes for the current user.
+  Future<List<ResumeModel>> getResumes() async {
+    final response = await apiClient.get(ApiConstants.resumes);
+    final list = response as List;
+    return list.map((json) => ResumeModel.fromJson(json as Map<String, dynamic>)).toList();
+  }
+
+  /// Fetch a single resume by ID.
+  Future<ResumeModel> getResumeById(int id) async {
+    final response = await apiClient.get(ApiConstants.resume(id));
+    return ResumeModel.fromJson(response as Map<String, dynamic>);
+  }
+
+  /// Delete a resume by ID.
+  Future<void> deleteResume(int id) async {
+    await apiClient.delete(ApiConstants.resume(id));
+  }
 
   /// Upload via file path (mobile/desktop).
   Future<ResumeUploadModel> uploadResume(String filePath) async {

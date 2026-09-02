@@ -44,6 +44,9 @@ class ApiConstants {
   static String candidateExperience(int id) => '/candidates/$id/experience';
   static String candidateProjects(int id) => '/candidates/$id/projects';
 
-  // Resume Upload — prefix /resumes
+  // Resume Upload & List — prefix /resumes
   static const String uploadResume = '/resumes/upload';
+  static const String resumes = '/resumes/all';
+  static String resume(int id) => '/resumes/$id';
+  static String resumeDownload(int id) => '/resumes/$id/download';
 }
