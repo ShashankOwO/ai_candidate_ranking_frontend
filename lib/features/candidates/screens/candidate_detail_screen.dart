@@ -42,6 +42,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
   List<CandidateProjectModel> projects = [];
 
   bool loading = true;
+  String? error;
 
   @override
   void initState() {
@@ -56,15 +57,13 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
     super.dispose();
   }
 
-  String? error;
-
   Future<void> _load() async {
     setState(() {
       loading = true;
       error = null;
     });
 
-    // Load candidate info first — if this fails, nothing else makes sense.
+    // Load candidate info first
     try {
       final c = await candidateRepository.getCandidate(widget.candidateId);
       if (!mounted) return;
@@ -78,7 +77,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
       return;
     }
 
-    // Load each section independently — one failure shouldn't block the rest.
+    // Load each section independently
     await Future.wait([
       _loadSafe(() async {
         final r = await candidateRepository.getCandidateSkills(widget.candidateId);
@@ -102,7 +101,6 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
     setState(() => loading = false);
   }
 
-  /// Runs an async function and swallows errors so other sections still load.
   Future<void> _loadSafe(Future<void> Function() fn) async {
     try {
       await fn();
@@ -113,7 +111,6 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
 
   static const _tabLabels = ['Skill', 'Experience', 'Education', 'Project'];
 
-  /// Opens the correct add-dialog for the currently active tab.
   Future<void> _showAddDialog() async {
     final tab = tabController.index;
     bool? result;
@@ -160,6 +157,102 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
         }
         break;
     }
+  }
+
+  // ── Delete Helpers ──
+
+  Future<void> _deleteSkill(CandidateSkillModel skill) async {
+    final confirmed = await _showDeleteConfirm('Remove skill "${skill.skillName}"?');
+    if (confirmed != true) return;
+    try {
+      await candidateRepository.deleteSkill(widget.candidateId, skill.skillId);
+      final r = await candidateRepository.getCandidateSkills(widget.candidateId);
+      if (mounted) setState(() => skills = r);
+      _showSuccess('Skill removed');
+    } catch (e) {
+      _showError('Failed to remove skill: $e');
+    }
+  }
+
+  Future<void> _deleteExperience(CandidateExperienceModel exp) async {
+    if (exp.experienceId == null) return;
+    final confirmed = await _showDeleteConfirm('Delete experience at "${exp.companyName}"?');
+    if (confirmed != true) return;
+    try {
+      await candidateRepository.deleteExperience(widget.candidateId, exp.experienceId!);
+      final r = await candidateRepository.getCandidateExperience(widget.candidateId);
+      if (mounted) setState(() => experience = r);
+      _showSuccess('Experience deleted');
+    } catch (e) {
+      _showError('Failed to delete experience: $e');
+    }
+  }
+
+  Future<void> _deleteQualification(CandidateQualificationModel qual) async {
+    if (qual.qualificationId == null) return;
+    final title = qual.degree ?? qual.university ?? 'Education entry';
+    final confirmed = await _showDeleteConfirm('Delete qualification "$title"?');
+    if (confirmed != true) return;
+    try {
+      await candidateRepository.deleteQualification(widget.candidateId, qual.qualificationId!);
+      final r = await candidateRepository.getCandidateQualifications(widget.candidateId);
+      if (mounted) setState(() => qualifications = r);
+      _showSuccess('Qualification deleted');
+    } catch (e) {
+      _showError('Failed to delete qualification: $e');
+    }
+  }
+
+  Future<void> _deleteProject(CandidateProjectModel project) async {
+    if (project.projectId == null) return;
+    final confirmed = await _showDeleteConfirm('Delete project "${project.projectName}"?');
+    if (confirmed != true) return;
+    try {
+      await candidateRepository.deleteProject(widget.candidateId, project.projectId!);
+      final r = await candidateRepository.getCandidateProjects(widget.candidateId);
+      if (mounted) setState(() => projects = r);
+      _showSuccess('Project deleted');
+    } catch (e) {
+      _showError('Failed to delete project: $e');
+    }
+  }
+
+  Future<bool?> _showDeleteConfirm(String message) {
+    return showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Confirm Delete'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSuccess(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: AppColors.success),
+    );
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message.replaceFirst('Exception: ', '')),
+        backgroundColor: AppColors.error,
+      ),
+    );
   }
 
   @override
@@ -277,7 +370,6 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
           ),
         ],
       ),
-      // FAB changes label based on active tab
       floatingActionButton: candidate == null
           ? null
           : AnimatedBuilder(
@@ -332,24 +424,35 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
                 color: hasGap ? AppColors.warning : null,
               ),
             ),
-            trailing: IconButton(
-              icon: const Icon(Icons.edit_outlined, size: 18),
-              color: AppColors.textSecondary,
-              tooltip: 'Edit skill proficiency & years',
-              onPressed: () async {
-                final result = await showDialog<bool>(
-                  context: context,
-                  builder: (_) => EditSkillDialog(
-                    candidateId: widget.candidateId,
-                    existing: skill,
-                  ),
-                );
-                if (result == true && mounted) {
-                  final r = await candidateRepository
-                      .getCandidateSkills(widget.candidateId);
-                  setState(() => skills = r);
-                }
-              },
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  color: AppColors.textSecondary,
+                  tooltip: 'Edit skill',
+                  onPressed: () async {
+                    final result = await showDialog<bool>(
+                      context: context,
+                      builder: (_) => EditSkillDialog(
+                        candidateId: widget.candidateId,
+                        existing: skill,
+                      ),
+                    );
+                    if (result == true && mounted) {
+                      final r = await candidateRepository
+                          .getCandidateSkills(widget.candidateId);
+                      setState(() => skills = r);
+                    }
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 18),
+                  color: AppColors.error,
+                  tooltip: 'Remove skill',
+                  onPressed: () => _deleteSkill(skill),
+                ),
+              ],
             ),
           ),
         );
@@ -405,7 +508,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
                             const SizedBox(width: 10),
                             Text('Years: ?',
                                 style: AppTextStyles.caption
-                                    .copyWith(color: AppColors.warning)),
+                                     .copyWith(color: AppColors.warning)),
                           ],
                         ],
                       ),
@@ -424,25 +527,36 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
                     ],
                   ),
                 ),
-                // Edit button
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  color: AppColors.textSecondary,
-                  tooltip: 'Edit / add missing info',
-                  onPressed: () async {
-                    final result = await showDialog<bool>(
-                      context: context,
-                      builder: (_) => EditExperienceDialog(
-                        candidateId: widget.candidateId,
-                        existing: exp,
-                      ),
-                    );
-                    if (result == true && mounted) {
-                      final r = await candidateRepository
-                          .getCandidateExperience(widget.candidateId);
-                      setState(() => experience = r);
-                    }
-                  },
+                // Actions
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      color: AppColors.textSecondary,
+                      tooltip: 'Edit / add missing info',
+                      onPressed: () async {
+                        final result = await showDialog<bool>(
+                          context: context,
+                          builder: (_) => EditExperienceDialog(
+                            candidateId: widget.candidateId,
+                            existing: exp,
+                          ),
+                        );
+                        if (result == true && mounted) {
+                          final r = await candidateRepository
+                              .getCandidateExperience(widget.candidateId);
+                          setState(() => experience = r);
+                        }
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 18),
+                      color: AppColors.error,
+                      tooltip: 'Delete experience',
+                      onPressed: () => _deleteExperience(exp),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -525,25 +639,36 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
                     ],
                   ),
                 ),
-                // Edit button
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  color: AppColors.textSecondary,
-                  tooltip: 'Edit / add missing info',
-                  onPressed: () async {
-                    final result = await showDialog<bool>(
-                      context: context,
-                      builder: (_) => EditQualificationDialog(
-                        candidateId: widget.candidateId,
-                        existing: qual,
-                      ),
-                    );
-                    if (result == true && mounted) {
-                      final r = await candidateRepository
-                          .getCandidateQualifications(widget.candidateId);
-                      setState(() => qualifications = r);
-                    }
-                  },
+                // Actions
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      color: AppColors.textSecondary,
+                      tooltip: 'Edit / add missing info',
+                      onPressed: () async {
+                        final result = await showDialog<bool>(
+                          context: context,
+                          builder: (_) => EditQualificationDialog(
+                            candidateId: widget.candidateId,
+                            existing: qual,
+                          ),
+                        );
+                        if (result == true && mounted) {
+                          final r = await candidateRepository
+                              .getCandidateQualifications(widget.candidateId);
+                          setState(() => qualifications = r);
+                        }
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 18),
+                      color: AppColors.error,
+                      tooltip: 'Delete qualification',
+                      onPressed: () => _deleteQualification(qual),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -632,25 +757,36 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
                     ],
                   ),
                 ),
-                // Edit button
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  color: AppColors.textSecondary,
-                  tooltip: 'Edit / add missing info',
-                  onPressed: () async {
-                    final result = await showDialog<bool>(
-                      context: context,
-                      builder: (_) => EditProjectDialog(
-                        candidateId: widget.candidateId,
-                        existing: project,
-                      ),
-                    );
-                    if (result == true && mounted) {
-                      final r = await candidateRepository
-                          .getCandidateProjects(widget.candidateId);
-                      setState(() => projects = r);
-                    }
-                  },
+                // Actions
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      color: AppColors.textSecondary,
+                      tooltip: 'Edit / add missing info',
+                      onPressed: () async {
+                        final result = await showDialog<bool>(
+                          context: context,
+                          builder: (_) => EditProjectDialog(
+                            candidateId: widget.candidateId,
+                            existing: project,
+                          ),
+                        );
+                        if (result == true && mounted) {
+                          final r = await candidateRepository
+                              .getCandidateProjects(widget.candidateId);
+                          setState(() => projects = r);
+                        }
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 18),
+                      color: AppColors.error,
+                      tooltip: 'Delete project',
+                      onPressed: () => _deleteProject(project),
+                    ),
+                  ],
                 ),
               ],
             ),
