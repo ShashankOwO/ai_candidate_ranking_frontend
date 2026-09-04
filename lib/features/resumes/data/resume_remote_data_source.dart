@@ -5,12 +5,30 @@ import 'package:http_parser/http_parser.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
+import 'models/resume_list_model.dart';
 import 'models/resume_upload_model.dart';
 
 class ResumeRemoteDataSource {
   final ApiClient apiClient;
 
   ResumeRemoteDataSource(this.apiClient);
+
+  /// Fetch all resumes for the current user from GET /resumes/all.
+  Future<List<ResumeListModel>> getResumes() async {
+    final response = await apiClient.get(ApiConstants.resumes);
+    if (response is List) {
+      return response
+          .whereType<Map<String, dynamic>>()
+          .map((e) => ResumeListModel.fromJson(e))
+          .toList();
+    }
+    return [];
+  }
+
+  /// Delete a resume by ID via DELETE /resumes/{id}.
+  Future<void> deleteResume(int resumeId) async {
+    await apiClient.delete(ApiConstants.deleteResume(resumeId));
+  }
 
   /// Upload via file path (mobile/desktop).
   Future<ResumeUploadModel> uploadResume(String filePath) async {
@@ -69,3 +87,4 @@ class ResumeRemoteDataSource {
     throw Exception(detail);
   }
 }
+

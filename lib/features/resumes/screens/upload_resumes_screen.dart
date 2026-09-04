@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../main.dart';
 import '../data/models/resume_upload_model.dart';
+import '../screens/resumes_list_screen.dart';
 
 class UploadResumesScreen extends StatefulWidget {
   const UploadResumesScreen({super.key});
@@ -166,10 +167,40 @@ class _UploadResumesScreenState extends State<UploadResumesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Upload Resumes'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.folder_shared_outlined),
+            tooltip: 'View Uploaded Resumes',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ResumesListScreen()),
+              );
+            },
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // View all uploaded resumes button
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ResumesListScreen()),
+                );
+              },
+              icon: const Icon(Icons.list_alt),
+              label: const Text('View All Uploaded Resumes'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
           // Upload drop zone
           InkWell(
             onTap: uploading ? null : _pickFiles,

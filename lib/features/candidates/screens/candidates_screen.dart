@@ -4,6 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../main.dart';
 import '../data/models/candidate_model.dart';
+import '../../chatbot/presentation/widgets/floating_chatbot_button.dart';
 import 'candidate_detail_screen.dart';
 import 'candidate_form_dialog.dart';
 
@@ -136,10 +137,18 @@ class _CandidatesScreenState extends State<CandidatesScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openCreate,
-        icon: const Icon(Icons.person_add_alt_1),
-        label: const Text('Add Candidate'),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          const FloatingChatbotButton(),
+          const SizedBox(height: 12),
+          FloatingActionButton.extended(
+            onPressed: _openCreate,
+            icon: const Icon(Icons.person_add_alt_1),
+            label: const Text('Add Candidate'),
+          ),
+        ],
       ),
       body: Column(
         children: [

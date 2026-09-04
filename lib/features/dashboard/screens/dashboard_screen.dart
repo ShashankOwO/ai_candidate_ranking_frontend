@@ -6,6 +6,7 @@ import '../../../main.dart';
 import '../../auth/data/models/user_model.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../candidates/screens/candidates_screen.dart';
+import '../../chatbot/presentation/widgets/floating_chatbot_button.dart';
 import '../../jobs/data/models/job_model.dart';
 import '../../jobs/presentation/pages/job_detail_page.dart';
 import '../../jobs/presentation/pages/jobs_page.dart';
@@ -278,6 +279,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
               ),
             ),
+      floatingActionButton: const FloatingChatbotButton(),
     );
   }
 

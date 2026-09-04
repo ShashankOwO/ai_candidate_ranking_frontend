@@ -44,6 +44,16 @@ class ApiConstants {
   static String candidateExperience(int id) => '/candidates/$id/experience';
   static String candidateProjects(int id) => '/candidates/$id/projects';
 
-  // Resume Upload — prefix /resumes
+  // Resume Upload & Management — prefix /resumes
   static const String uploadResume = '/resumes/upload';
+  static const String resumes = '/resumes/';
+  static String deleteResume(int id) => '/resumes/$id';
+  static String resumeFile(int id) => '/resumes/$id/file';
+
+  // Chatbot (MCP Candidate & Resume Intelligence) — prefix /chatbot
+  static const String chatbotMessage = '/chatbot/message';
+  static const String chatbotChat = '/chatbot/chat';
+  static String chatbotHistory(String sessionId) => '/chatbot/history/$sessionId';
+  static String chatbotSession(String sessionId) => '/chatbot/session/$sessionId';
 }
+
