@@ -313,7 +313,7 @@ class _ChatbotDialogState extends State<ChatbotDialog> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Ask about candidate details, count of resumes created, or request visual resume charts.',
+                'Ask about candidate details, count of resumes created, skills, or resume charts. (Project inquiries only)',
                 style: AppTextStyles.caption,
                 textAlign: TextAlign.center,
               ),
@@ -526,7 +526,7 @@ class _ChatbotDialogState extends State<ChatbotDialog> {
                 controller: _controller,
                 enabled: !_isLoading,
                 decoration: const InputDecoration(
-                  hintText: 'Ask about candidates & resumes...',
+                  hintText: 'Ask project questions (candidates, resumes, charts)...',
                   hintStyle: TextStyle(
                     fontSize: 13,
                     color: AppColors.textTertiary,
