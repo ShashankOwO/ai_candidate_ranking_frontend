@@ -17,6 +17,8 @@ import 'features/ranking/data/ranking_remote_data_source.dart';
 import 'features/ranking/data/ranking_repository.dart';
 import 'features/resumes/data/resume_remote_data_source.dart';
 import 'features/resumes/data/resume_repository.dart';
+import 'features/chatbot/data/chatbot_remote_data_source.dart';
+import 'features/chatbot/data/chatbot_repository.dart';
 
 late final ApiClient apiClient;
 late final AuthStorage authStorage;
@@ -25,6 +27,7 @@ late final JobRepository jobRepository;
 late final CandidateRepository candidateRepository;
 late final ResumeRepository resumeRepository;
 late final RankingRepository rankingRepository;
+late final ChatbotRepository chatbotRepository;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,6 +58,9 @@ Future<void> main() async {
 
   final rankingDataSource = RankingRemoteDataSource(apiClient);
   rankingRepository = RankingRepository(rankingDataSource);
+
+  final chatbotDataSource = ChatbotRemoteDataSource(apiClient);
+  chatbotRepository = ChatbotRepository(chatbotDataSource);
 
   runApp(const CandidateRankingApp());
 }

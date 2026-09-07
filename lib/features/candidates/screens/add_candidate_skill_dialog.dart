@@ -388,7 +388,7 @@ class _AddCandidateSkillDialogState extends State<AddCandidateSkillDialog> {
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: defaultProficiency,
+                        initialValue: defaultProficiency,
                         decoration: const InputDecoration(
                           labelText: 'Proficiency',
                           border: OutlineInputBorder(),

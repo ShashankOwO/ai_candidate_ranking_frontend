@@ -11,6 +11,7 @@ import '../../jobs/presentation/pages/job_detail_page.dart';
 import '../../jobs/presentation/pages/jobs_page.dart';
 import '../../jobs/presentation/widgets/job_form_page.dart';
 import '../../resumes/screens/upload_resumes_screen.dart';
+import '../../chatbot/presentation/widgets/floating_chatbot_button.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -123,6 +124,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
       drawer: _buildDrawer(displayName),
+      floatingActionButton: const FloatingChatbotButton(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(

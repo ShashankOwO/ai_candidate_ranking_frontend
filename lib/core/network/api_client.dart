@@ -9,8 +9,8 @@ class ApiClient {
 
   ApiClient({
     required this.baseUrl,
-    String? token,
-  }) : _token = token;
+    this._token,
+  });
 
   void setToken(String token) {
     _token = token;
