@@ -18,6 +18,9 @@ class JobRepository {
   Future<JobModel> createJob(Map<String, dynamic> data) =>
       _dataSource.createJob(data);
 
+  Future<JobModel> updateJob(int jobId, Map<String, dynamic> data) =>
+      _dataSource.updateJob(jobId, data);
+
   Future<void> deleteJob(int jobId) => _dataSource.deleteJob(jobId);
 
   // ── Master Skills ──

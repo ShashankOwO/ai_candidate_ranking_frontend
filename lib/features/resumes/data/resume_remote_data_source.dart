@@ -16,8 +16,20 @@ class ResumeRemoteDataSource {
   /// Fetch all resumes for the current user.
   Future<List<ResumeModel>> getResumes() async {
     final response = await apiClient.get(ApiConstants.resumes);
-    final list = response as List;
-    return list.map((json) => ResumeModel.fromJson(json as Map<String, dynamic>)).toList();
+    final List<dynamic> list;
+    if (response is List) {
+      list = response;
+    } else if (response is Map<String, dynamic>) {
+      // Handle wrapped response e.g. {"resumes": [...]}
+      final wrapped = response['resumes'] ?? response['data'] ?? [];
+      list = wrapped is List ? wrapped : [];
+    } else {
+      list = [];
+    }
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map(ResumeModel.fromJson)
+        .toList();
   }
 
   /// Fetch a single resume by ID.

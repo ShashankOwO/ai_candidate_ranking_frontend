@@ -29,6 +29,11 @@ class JobRemoteDataSource {
     return JobModel.fromJson(response as Map<String, dynamic>);
   }
 
+  Future<JobModel> updateJob(int jobId, Map<String, dynamic> data) async {
+    final response = await apiClient.put(ApiConstants.updateJob(jobId), body: data);
+    return JobModel.fromJson(response as Map<String, dynamic>);
+  }
+
   Future<void> deleteJob(int jobId) async {
     await apiClient.delete(ApiConstants.job(jobId));
   }

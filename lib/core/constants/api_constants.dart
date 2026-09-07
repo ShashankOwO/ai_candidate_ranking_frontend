@@ -1,15 +1,16 @@
 class ApiConstants {
   static const String baseUrl = 'http://127.0.0.1:8000';
 
-  // Auth
+
   static const String register = '/auth/register';
   static const String login = '/auth/login';
   static const String me = '/auth/me';
 
-  // Jobs — prefix /jobs
+  
   static const String createJob = '/jobs/create';
   static const String jobs = '/jobs/all';
   static String job(int id) => '/jobs/$id';
+  static String updateJob(int id) => '/jobs/$id';
 
   // Skills (master list) — prefix /skills
   static const String skills = '/skills/all';

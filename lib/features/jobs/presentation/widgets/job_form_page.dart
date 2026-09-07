@@ -67,9 +67,11 @@ class _JobFormPageState extends State<JobFormPage> {
         'minimum_experience': experience,
       };
 
-      // Note: backend only supports creating jobs (no update endpoint).
-      // Always call createJob regardless of edit mode.
-      await widget.repository.createJob(data);
+      if (widget.isEditing) {
+        await widget.repository.updateJob(widget.job!.jobId, data);
+      } else {
+        await widget.repository.createJob(data);
+      }
 
       if (!mounted) return;
 

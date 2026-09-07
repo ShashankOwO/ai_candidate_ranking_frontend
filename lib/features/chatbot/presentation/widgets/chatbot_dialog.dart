@@ -66,6 +66,11 @@ class _ChatbotDialogState extends State<ChatbotDialog> {
   }
 
   Future<void> _loadHistory() async {
+    // Skip loading if there is no active session yet
+    if (chatbotRepository.currentSessionId == null) {
+      if (mounted) setState(() => _isInitialLoading = false);
+      return;
+    }
     try {
       final history = await chatbotRepository.getHistory();
       if (!mounted) return;
