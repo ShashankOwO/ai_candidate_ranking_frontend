@@ -116,6 +116,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       label: 'Username',
                       controller: usernameController,
                       validator: Validators.username,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
                     ),
 
                     const SizedBox(height: 18),

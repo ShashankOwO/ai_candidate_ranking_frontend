@@ -46,9 +46,9 @@ class _ChatbotDialogState extends State<ChatbotDialog> {
   bool _isInitialLoading = true;
 
   final List<String> _quickPrompts = [
+    'Show candidate resume chart',
     'Show all candidates and resumes',
     'Who has the most resumes?',
-    'Show me a resume chart',
     'Summarize my candidate skills',
   ];
 
@@ -425,9 +425,10 @@ class _ChatbotDialogState extends State<ChatbotDialog> {
                     ),
                   ),
                 ),
-                // Inline Chart if present
-                if (message.chartData != null)
+                if (message.chartData != null) ...[
+                  const SizedBox(height: 8),
                   ResumeChartWidget(chartData: message.chartData!),
+                ],
               ],
             ),
           ),

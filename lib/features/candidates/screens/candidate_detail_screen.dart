@@ -388,76 +388,206 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen>
     );
   }
 
-  // ── Skills Tab ─────────────────────────────────────────────
+  // ── Skills Tab (Pill Design) ───────────────────────────────
   Widget _buildSkillsTab() {
     if (skills.isEmpty) return _emptyState('No skills extracted');
-    return ListView.builder(
+    return SingleChildScrollView(
       padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 80),
-      itemCount: skills.length,
-      itemBuilder: (context, index) {
-        final skill = skills[index];
-        final hasGap = skill.proficiency == null || skill.yearsExperience == null;
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            leading: const Icon(Icons.code, color: AppColors.primary),
-            title: Row(
-              children: [
-                Expanded(child: Text(skill.skillName, style: AppTextStyles.label)),
-                if (hasGap)
-                  Tooltip(
-                    message: 'Incomplete — tap edit to fill in missing info',
-                    child: Icon(Icons.warning_amber_rounded,
-                        size: 16, color: AppColors.warning),
-                  ),
-              ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header summary pill & count
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.bolt_rounded, size: 16, color: AppColors.primary),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${skills.length} ${skills.length == 1 ? 'Skill' : 'Skills'}',
+                      style: AppTextStyles.caption.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              Text(
+                'Tap pill to edit',
+                style: AppTextStyles.caption.copyWith(
+                  fontStyle: FontStyle.italic,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Flowing pill tags
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: skills.map(_buildCandidateSkillPill).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCandidateSkillPill(CandidateSkillModel skill) {
+    final hasGap = skill.proficiency == null || skill.yearsExperience == null;
+    final List<String> details = [];
+    if (skill.proficiency != null) details.add(skill.proficiency!);
+    if (skill.yearsExperience != null) details.add('${skill.yearsExperience} yrs');
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: () => _editSkill(skill),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: hasGap
+              ? AppColors.warning.withValues(alpha: 0.08)
+              : AppColors.primary.withValues(alpha: 0.07),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: hasGap
+                ? AppColors.warning.withValues(alpha: 0.35)
+                : AppColors.primary.withValues(alpha: 0.28),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
             ),
-            subtitle: Text(
-              [
-                if (skill.proficiency != null) skill.proficiency!
-                else 'Proficiency: ?',
-                if (skill.yearsExperience != null)
-                  '${skill.yearsExperience} yrs'
-                else 'Years: ?',
-              ].join(' · '),
-              style: AppTextStyles.caption.copyWith(
-                color: hasGap ? AppColors.warning : null,
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Pill icon
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: hasGap
+                    ? AppColors.warning.withValues(alpha: 0.2)
+                    : AppColors.primary.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.code_rounded,
+                size: 14,
+                color: hasGap ? AppColors.warning : AppColors.primary,
               ),
             ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  color: AppColors.textSecondary,
-                  tooltip: 'Edit skill',
-                  onPressed: () async {
-                    final result = await showDialog<bool>(
-                      context: context,
-                      builder: (_) => EditSkillDialog(
-                        candidateId: widget.candidateId,
-                        existing: skill,
-                      ),
-                    );
-                    if (result == true && mounted) {
-                      final r = await candidateRepository
-                          .getCandidateSkills(widget.candidateId);
-                      setState(() => skills = r);
-                    }
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 18),
-                  color: AppColors.error,
-                  tooltip: 'Remove skill',
-                  onPressed: () => _deleteSkill(skill),
-                ),
-              ],
+            const SizedBox(width: 8),
+
+            // Skill Name
+            Text(
+              skill.skillName,
+              style: const TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
             ),
-          ),
-        );
-      },
+
+            // Inner sub-pill with details (e.g. Intermediate • 2 yrs)
+            if (details.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Text(
+                  details.join(' • '),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+
+            // Gap warning icon
+            if (hasGap) ...[
+              const SizedBox(width: 6),
+              Tooltip(
+                message: 'Incomplete — tap to fill in missing info',
+                child: const Icon(
+                  Icons.warning_amber_rounded,
+                  size: 16,
+                  color: AppColors.warning,
+                ),
+              ),
+            ],
+
+            const SizedBox(width: 6),
+
+            // Edit Action
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => _editSkill(skill),
+              child: const Padding(
+                padding: EdgeInsets.all(2),
+                child: Icon(
+                  Icons.edit_outlined,
+                  size: 15,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+
+            const SizedBox(width: 4),
+
+            // Delete Action
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => _deleteSkill(skill),
+              child: const Padding(
+                padding: EdgeInsets.all(2),
+                child: Icon(
+                  Icons.close_rounded,
+                  size: 16,
+                  color: AppColors.error,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
+  }
+
+  Future<void> _editSkill(CandidateSkillModel skill) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (_) => EditSkillDialog(
+        candidateId: widget.candidateId,
+        existing: skill,
+      ),
+    );
+    if (result == true && mounted) {
+      final r = await candidateRepository.getCandidateSkills(widget.candidateId);
+      setState(() => skills = r);
+    }
   }
 
   // ── Experience Tab ─────────────────────────────────────────

@@ -12,8 +12,27 @@ class Validators {
       return "Username is required";
     }
 
-    if (value.trim().length < 3) {
+    final trimmed = value.trim();
+
+    if (trimmed.length < 3) {
       return "Username must be at least 3 characters";
+    }
+
+    if (trimmed.length > 50) {
+      return "Username must not exceed 50 characters";
+    }
+
+    if (trimmed.contains('@')) {
+      return "Please enter a valid username, not an email address";
+    }
+
+    if (trimmed.contains(' ')) {
+      return "Username cannot contain spaces";
+    }
+
+    final validUsernameRegex = RegExp(r'^[a-zA-Z0-9_]+$');
+    if (!validUsernameRegex.hasMatch(trimmed)) {
+      return "Username can only contain letters, numbers, and underscores";
     }
 
     return null;

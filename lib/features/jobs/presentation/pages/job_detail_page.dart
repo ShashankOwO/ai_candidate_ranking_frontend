@@ -329,37 +329,134 @@ class _JobDetailPageState extends State<JobDetailPage>
 
           // Required Skills
           if (skills.where((s) => s.isRequired).isNotEmpty) ...[
-            Text('Required', style: AppTextStyles.label.copyWith(color: AppColors.error)),
-            const SizedBox(height: 8),
-            ...skills.where((s) => s.isRequired).map(_buildSkillCard),
-            const SizedBox(height: 16),
+            Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: AppColors.error,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Required (${skills.where((s) => s.isRequired).length})',
+                  style: AppTextStyles.label.copyWith(color: AppColors.error),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: skills
+                  .where((s) => s.isRequired)
+                  .map(_buildSkillPill)
+                  .toList(),
+            ),
+            const SizedBox(height: 20),
           ],
 
           // Preferred Skills
           if (skills.where((s) => !s.isRequired).isNotEmpty) ...[
-            Text('Preferred', style: AppTextStyles.label.copyWith(color: AppColors.info)),
-            const SizedBox(height: 8),
-            ...skills.where((s) => !s.isRequired).map(_buildSkillCard),
+            Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: AppColors.info,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Preferred (${skills.where((s) => !s.isRequired).length})',
+                  style: AppTextStyles.label.copyWith(color: AppColors.info),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: skills
+                  .where((s) => !s.isRequired)
+                  .map(_buildSkillPill)
+                  .toList(),
+            ),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildSkillCard(JobSkillModel skill) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: Icon(
-          Icons.check_circle,
-          color: skill.isRequired ? AppColors.error : AppColors.info,
-        ),
-        title: Text(skill.skillName),
-        subtitle: Text(skill.isRequired ? 'Required' : 'Preferred'),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete_outline, color: AppColors.error),
-          onPressed: () => _deleteSkill(skill),
-        ),
+  Widget _buildSkillPill(JobSkillModel skill) {
+    final isReq = skill.isRequired;
+    final accentColor = isReq ? AppColors.error : AppColors.info;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: accentColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: accentColor.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isReq ? Icons.verified_rounded : Icons.star_rounded,
+            size: 15,
+            color: accentColor,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            skill.skillName,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              isReq ? 'Required' : 'Preferred',
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.bold,
+                color: accentColor,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: () => _deleteSkill(skill),
+            child: Padding(
+              padding: const EdgeInsets.all(2),
+              child: Icon(
+                Icons.close_rounded,
+                size: 15,
+                color: isReq ? AppColors.error : AppColors.textSecondary,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

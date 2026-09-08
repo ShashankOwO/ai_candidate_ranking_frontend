@@ -104,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 32),
 
                     const AuthHeader(
-                      title: 'Welcome Back',
+                      title: 'Welcome',
                       subtitle: 'Login to your account',
                     ),
 
@@ -114,8 +114,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 8),
                     AppTextField(
                       label: 'Username',
+                      hint: 'e.g. john_doe',
                       controller: usernameController,
-                      validator: Validators.required,
+                      validator: Validators.username,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
                     ),
 
                     const SizedBox(height: 18),
